@@ -36,7 +36,7 @@ Common Lisp uses a compile-time macro system, doesn't concern itself overly with
 
 ##### a language you'd use in production
 
-By its nature, a project like this is going to be highly unstable and prone to explosions. So, don't use it if you can't afford explosions.
+By its nature, a project like this is going to be highly unstable and prone to explosions. Use it to sate your curiosity about certain language features, or perhaps as a starting point for your own experiments, not as the foundation for large software projects.
 
 ##### especially portable
 
