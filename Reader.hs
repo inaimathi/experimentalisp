@@ -6,23 +6,23 @@ import Control.Monad
 import Data.Char
 import Text.ParserCombinators.Parsec hiding (spaces)
 
-tests :: [String]
-tests = ["  def "
-        , "123"
-        , "-234"
-        , "-test"
-        , "\"test\""
-        , "(1 2 3)"
-        , "(def null? (fn (thing) (= () thing)))"
-        , "true"
-        , "false"]
+-- tests :: [String]
+-- tests = ["  def "
+--         , "123"
+--         , "-234"
+--         , "-test"
+--         , "\"test\""
+--         , "(1 2 3)"
+--         , "(def null? (fn (thing) (= () thing)))"
+--         , "true"
+--         , "false"]
 
 lisp_read :: String -> Either ParseError LispVal
 lisp_read str = parse lispval "lisp" str
 
 lispval :: Parser LispVal
 lispval = do spaces
-             exp <- s_expression <|> Reader.string <|> dashed <|> number <|> symbol
+             exp <- s_expression <|> Reader.string <|> quoted <|> dashed <|> number <|> symbol
              spaces
              return $ exp
 
@@ -41,6 +41,11 @@ string = do char '"'
             str <- many $ escapes <|> noneOf "\"\\"
             char '"'
             return $ Str str
+
+quoted :: Parser LispVal
+quoted = do char '\''
+            thing <- lispval
+            return $ (Cell (Sym "quote") thing)
 
 dashed :: Parser LispVal
 dashed = do char '-'

@@ -7,7 +7,7 @@ eval (Sym exp) env = (Model.lookup env exp, env)
 eval (Cell (Sym "fn") (Cell args body)) env = 
     (Procedure env args body, env)
 eval (Cell (Sym "fexpr") (Cell args body)) env =
-    (Procedure env args body, env)
+    (Fexpr env args body, env)
 eval (Cell (Sym "do") exp) env = 
     eval_sequence exp env
 eval (Cell (Sym "if") (Cell test (Cell conseq (Cell alt Nil)))) env = 
@@ -18,6 +18,8 @@ eval (Cell (Sym "def") (Cell name (Cell exp Nil))) env =
     eval_definition name exp env
 eval (Cell (Sym "set!") (Cell name (Cell exp Nil))) env =
     eval_assignment name exp env
+eval (Cell (Sym "quote") thing) env =
+    (thing, env)
 eval (Cell car cdr) env = 
     apply car cdr env
 eval exp env 
@@ -28,24 +30,28 @@ eval_sequence :: LispVal -> Environment -> (LispVal, Environment)
 eval_sequence (Cell car Nil) env = eval car env
 eval_sequence (Cell car cdr) env = eval_sequence cdr new_env
     where (_, new_env) = eval car env
+eval_sequence exp _ = error $ "Called eval_sequence on a non-cell: " ++ show exp
 
 eval_args :: LispVal -> Environment -> LispVal
 eval_args (Cell car Nil) env = (Cell res Nil)
     where (res, _) = eval car env
 eval_args (Cell car cdr) env = (Cell res (eval_args cdr env))
     where (res, _) = eval car env
+eval_args argl _ = error $ "Called eval_args ona non-cell: " ++ show argl
 
 eval_definition :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 eval_definition (Sym name) exp env = case Model.lookup env name of
                                        Nil -> (Nil, bind new_env name res)
                                            where (res, new_env) = eval exp env
                                        _ -> error $ "Symbol '" ++ name ++ "' already bound ..."
+eval_definition name _ _ = error $ "Tried to bind to non-symbol: " ++ show name
 
 eval_assignment :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 eval_assignment (Sym name) exp env = case Model.lookup env name of
                                        Nil -> (res, bind new_env name res)
                                            where (res, new_env) = eval exp env
                                        _ -> error $ "Tried to assign to unbound symbol '" ++ name ++ "' ..."
+eval_assignment name _ _ = error $ "Tried to assign to non-symbol: " ++ show name
 
 apply :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 apply exp args env = case eval exp env of

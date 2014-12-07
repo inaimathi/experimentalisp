@@ -1,11 +1,28 @@
 # experimentaLISP
 ###### Because I don't have too much to do already
 
-### What this is
+## How to use it
+
+Don't. Not yet, at any rate, I've barely got the reader written. If you absolutely _must_:
+
+- Install [Haskell](https://www.haskell.org/haskellwiki/Haskell)
+- Clone this repo
+
+then either
+
+- Run `ghc Experimentalisp.hs`
+- Run the resulting binary (which should be named `Experimentalisp`)
+
+or
+
+- Run `ghci Experimentalisp.hs`
+- Evaluate the `main` function in the resulting Haskell REPL
+
+## What this is
 
 `experimentaLISP` is an experimental lisp dialect. It's meant to help a few curious individuals explore the implications and interactions of certain language features that may or may not be in favor with the mainstream Lisp communities. At the moment, these include fexprs, first-class environments, first class reader macros, types, purity, various approaches to polymorphic functions, and some ideas about modules.
 
-### What this isn't
+## What this isn't
 
 `experimentaLISP` is not, and is not trying to be
 
@@ -24,7 +41,3 @@ By its nature, a project like this is going to be highly unstable and prone to e
 ##### especially portable
 
 `experimentaLISP` is not portable, except to the extent that our substrate language (currently Haskell) is portable. If you're looking for a Lisp dialect that you can use in a wide variety of substrates and platforms, I suggest [Shen](http://shenlanguage.org/).
-
-### How to use it
-
-Don't. Not yet, at any rate, I've barely got the reader written.
