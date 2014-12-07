@@ -2,16 +2,16 @@ module Evaluator where
 
 import Model
 
-eval :: LispVal -> Environment -> LispVal
-eval (Sym exp) env = Model.lookup env exp
-eval (Cell (Sym "lambda") (Cell args body)) env = 
-    Procedure env args body
+eval :: LispVal -> Environment -> (LispVal, Environment)
+eval (Sym exp) env = (Model.lookup env exp, env)
+eval (Cell (Sym "fn") (Cell args body)) env = 
+    (Procedure env args body, env)
 eval (Cell (Sym "fexpr") (Cell args body)) env =
-    Procedure env args body
+    (Procedure env args body, env)
 eval (Cell (Sym "do") exp) env = 
     eval_sequence exp env
 eval (Cell (Sym "if") (Cell test (Cell conseq (Cell alt Nil)))) env = 
-    if true_p $ eval test env 
+    if true_p . fst $ eval test env 
     then eval conseq env
     else eval alt env
 eval (Cell (Sym "def") (Cell name (Cell exp Nil))) env = 
@@ -20,30 +20,40 @@ eval (Cell (Sym "set!") (Cell name (Cell exp Nil))) env =
     eval_assignment name exp env
 eval (Cell car cdr) env = 
     apply car cdr env
-eval exp _ 
-    | self_evaluating_p exp = exp
+eval exp env 
+    | self_evaluating_p exp = (exp, env)
     | otherwise = error $ "EVAL :: invalid form " ++ show exp
 
-eval_sequence :: LispVal -> Environment -> LispVal
+eval_sequence :: LispVal -> Environment -> (LispVal, Environment)
 eval_sequence (Cell car Nil) env = eval car env
-eval_sequence (Cell car cdr) env = eval_sequence cdr env
+eval_sequence (Cell car cdr) env = eval_sequence cdr new_env
+    where (_, new_env) = eval car env
 
-eval_definition :: LispVal -> LispVal -> Environment -> LispVal
+eval_args :: LispVal -> Environment -> LispVal
+eval_args (Cell car Nil) env = (Cell res Nil)
+    where (res, _) = eval car env
+eval_args (Cell car cdr) env = (Cell res (eval_args cdr env))
+    where (res, _) = eval car env
+
+eval_definition :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 eval_definition (Sym name) exp env = case Model.lookup env name of
-                                       Nil -> eval exp env -- bind env name $ eval exp env
+                                       Nil -> (Nil, bind new_env name res)
+                                           where (res, new_env) = eval exp env
                                        _ -> error $ "Symbol '" ++ name ++ "' already bound ..."
 
-eval_assignment :: LispVal -> LispVal -> Environment -> LispVal
+eval_assignment :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 eval_assignment (Sym name) exp env = case Model.lookup env name of
-                                       Nil -> eval exp env -- set env name $ eval exp env
+                                       Nil -> (res, bind new_env name res)
+                                           where (res, new_env) = eval exp env
                                        _ -> error $ "Tried to assign to unbound symbol '" ++ name ++ "' ..."
 
-apply :: LispVal -> LispVal -> Environment -> LispVal
+apply :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 apply exp args env = case eval exp env of
-                      Primitive fn arglist -> 
-                          fn $ extend_env env arglist values
-                      Procedure local_env arglist body -> 
-                          eval_sequence body $ extend_env local_env arglist values
-                      Fexpr local_env arglist body -> 
-                          eval (eval_sequence body $ extend_env local_env arglist args) env
-    where values = traverse (flip eval env) args
+                      (Primitive fn arglist, env') -> 
+                          fn $ arglist_env (extend env') arglist $ eval_args args env'
+                      (Procedure local_env arglist body, env') -> 
+                          eval_sequence body $ arglist_env (extend local_env) arglist $ eval_args args env'
+                      (Fexpr local_env arglist body, env') -> 
+                          eval res env'
+                              where (res, _) = eval_sequence body $ arglist_env (extend local_env) arglist args
+                      _ -> error $ "Undefined function '" ++ show exp ++ "'"

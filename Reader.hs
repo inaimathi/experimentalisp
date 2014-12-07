@@ -1,4 +1,4 @@
-module Reader where
+module Reader (lisp_read) where
 
 import Model
 
@@ -44,10 +44,12 @@ string = do char '"'
 
 dashed :: Parser LispVal
 dashed = do char '-'
-            str <- many1 $ noneOf ")\n\r\t "
-            return $ if all isNumber str
-                     then Num . read $ '-':str
-                     else Sym $ '-':str
+            str <- many $ noneOf ")\n\r\t "
+            return $ if [] == str
+                     then Sym $ "-"
+                     else if all isNumber str
+                          then Num . Prelude.read $ '-':str
+                          else Sym $ '-':str
 
 symbol :: Parser LispVal
 symbol = do sym <- many1 $ noneOf ")\n\r\t "
@@ -57,7 +59,7 @@ symbol = do sym <- many1 $ noneOf ")\n\r\t "
                        _ -> Sym sym
 
 number :: Parser LispVal
-number = liftM (Num . read) $ many1 digit
+number = liftM (Num . Prelude.read) $ many1 digit
 
 spaces :: Parser ()
 spaces = skipMany space
