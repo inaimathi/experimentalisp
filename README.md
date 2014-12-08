@@ -32,7 +32,7 @@ Scheme uses hygienic macros, doesn't concern itself overly with reader macros an
 
 ##### a Common Lisp implementation
 
-Common Lisp uses a compile-time macro system, doesn't concern itself overly with reader macros, doesn't allow full access to environments and doesn't particularly care about avoiding side-effects. It also has some 30 years worth of baggage/good sense that I'm not interested in re-implementing. If you want to use a Common Lisp, I recommend [SBCL](http://www.sbcl.org/) or CCL.
+Common Lisp uses a compile-time macro system, doesn't concern itself overly with reader macros, doesn't allow full access to environments and doesn't particularly care about avoiding side-effects. It also has some 30 years worth of baggage/good sense that I'm not interested in re-implementing. If you want to use a Common Lisp, I recommend [SBCL](http://www.sbcl.org/) or [CCL](http://ccl.clozure.com/).
 
 ##### a language you'd use in production
 
