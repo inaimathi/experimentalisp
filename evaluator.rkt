@@ -7,7 +7,10 @@
   (cond ((self-evaluating? exp)
 	 exp)
 	((symbol? exp) 
-	 (lookup env exp))
+	 (let ((res (lookup env exp)))
+	   (if res
+	       (cdr res)
+	       (error (format "LOOKUP: undefined value '~a'" exp)))))
 	((eq? 'fn (car exp))
 	 (procedure env (cadr exp) (cddr exp)))
 	((eq? 'fexpr (car exp))

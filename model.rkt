@@ -4,12 +4,13 @@
 	 fexpr fexpr?
 	 arglist-of body-of environment-of
 
-	 global-env extend-env lookup bind! re-bind! arglist-env!
+	 global-env make-env extend-env lookup bind! re-bind! arglist-env!
 
 	 true? self-evaluating?)
 
 ;;;;;;;;;; Environments
-(define global-env (list (make-hash)))
+(define (make-env) (list (make-hash)))
+(define global-env (make-env))
 (define (extend-env env)
   (cons (make-hash) env))
 (define (lookup env exp)
@@ -21,7 +22,8 @@
 (define (bind! env name exp)
   (if (hash-has-key? (car env) name)
       (error (format "BIND: tried clobbering name '~a'...~%" name))
-      (hash-set! (car env) name exp)))
+      (hash-set! (car env) name exp))
+  env)
 (define (re-bind! env name exp)
   (cond ((null? env) 
 	 (error (format "RE-BIND: symbol '~a' is unassigned~%" name)))
@@ -30,6 +32,7 @@
 	(else
 	 (re-bind! (cdr env) name exp)))
   env)
+
 (define (arglist-env! env arglist args)
   (cond ((and (null? arglist) (null? args))
 	 env)
@@ -42,10 +45,13 @@
 	 (error (format "Not enough arguments...~%"))
 	 )
 	(else
-	 (bind! env (car arglist) (car args)))))
+	 (arglist-env! 
+	  (bind! env (car arglist) (car args)) 
+	  (cdr arglist) (cdr args))))
+  env)
 
 ;;;;;;;;;; Callable forms
-(struct primitive (env args body))
+(struct primitive (args body))
 (struct procedure (env args body))
 (struct fexpr (env args body))
 
@@ -58,8 +64,7 @@
 	((procedure? thing) (procedure-body thing))
 	((fexpr? thing) (fexpr-body thing))))
 (define (environment-of thing)
-  (cond ((primitive? thing) (primitive-env thing))
-	((procedure? thing) (procedure-env thing))
+  (cond ((procedure? thing) (procedure-env thing))
 	((fexpr? thing) (fexpr-env thing))))
 
 ;;;;;;;;;; Basics
