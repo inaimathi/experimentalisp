@@ -5,7 +5,7 @@
 	 make-partial partial? complete? collapse
 	 arglist-of environment-of body-of
 
-	 global-env make-env extend-env lookup bind! re-bind! arglist-env!
+	 global-env make-env extend-env lookup bind! re-bind!
 
 	 true? self-evaluating?)
 
@@ -34,23 +34,6 @@
 	 (re-bind! (cdr env) name exp)))
   env)
 
-(define (arglist-env! env arglist args)
-  (cond ((and (null? arglist) (null? args))
-	 env)
-	((null? arglist)
-	 ;; too many args; error
-	 (error (format "Too many arguments...~%"))
-	 )
-	((null? args)
-	 ;; too few args; return a partial
-	 (error (format "Not enough arguments...~%"))
-	 )
-	(else
-	 (arglist-env! 
-	  (bind! env (car arglist) (car args)) 
-	  (cdr arglist) (cdr args))))
-  env)
-
 (define (make-partial thing new-args)
   (letrec ((argl (arglist-of thing))
 	   (rec (lambda (ks vs)
@@ -67,6 +50,13 @@
    (extend-env (environment-of a-partial))
    (arglist-of (body-of a-partial))
    (partial-values a-partial)))
+
+(define (arglist-env! env arglist args)
+  (if (and (null? arglist) (null? args))
+      env
+      (arglist-env! 
+       (bind! env (car arglist) (car args)) 
+       (cdr arglist) (cdr args))))
 
 ;;;;;;;;;; Callable forms
 (struct primitive (args body))
