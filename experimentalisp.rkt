@@ -15,7 +15,7 @@
 (define (loop)
   (display "EXP>> ")
   (print (exp-eval (read) global-env))
-  (displayln "")
+  (displayln "") (displayln "")
   (loop))
 
 (define (main)
