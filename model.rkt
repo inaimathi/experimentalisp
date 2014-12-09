@@ -1,7 +1,9 @@
 #lang racket/base
-(provide primitive primitive? primitive-args primitive-body
-	 procedure procedure? procedure-env procedure-args procedure-body
-	 fexpr fexpr? fexpr-env fexpr-args fexpr-body
+(provide primitive primitive?
+	 procedure procedure?
+	 fexpr fexpr?
+	 make-partial partial? complete?
+	 arglist-of environment-of body-of
 
 	 global-env make-env extend-env lookup bind! re-bind! arglist-env!
 
@@ -49,10 +51,41 @@
 	  (cdr arglist) (cdr args))))
   env)
 
+(define (make-partial thing new-args)
+  (letrec ((argl (arglist-of thing))
+	   (rec (lambda (ks vs)
+		  (cond ((and (null? ks) (null? vs)) '())
+			((null? vs) ks)
+			((null? ks) (error "Too many arguments"))
+			(else (rec (cdr ks) (cdr vs)))))))
+    (if (partial? thing)
+	(partial (rec argl new-args) (append (partial-values thing) new-args) (partial-body thing))
+	(partial (rec argl new-args) new-args thing))))
+
 ;;;;;;;;;; Callable forms
 (struct primitive (args body))
 (struct procedure (env args body))
 (struct fexpr (env args body))
+
+(struct partial (remaining-args values body))
+(define (complete? thing)
+  (eq? '() (partial-remaining-args thing)))
+
+(define (environment-of thing)
+  (cond ((primitive? thing) global-env)
+	((procedure? thing) (procedure-env thing))
+	((fexpr? thing) (fexpr-env thing))))
+
+(define (arglist-of thing)
+  (cond ((primitive? thing) (primitive-args thing))
+	((procedure? thing) (procedure-args thing))
+	((fexpr? thing) (fexpr-args thing))
+	((partial? thing) (partial-remaining-args thing))))
+
+(define (body-of thing)
+  (cond ((primitive? thing) (primitive-body thing))
+	((procedure? thing) (procedure-body thing))
+	((fexpr? thing) (fexpr-body thing))))
 
 ;;;;;;;;;; Basics
 (define (true? thing)
@@ -65,4 +98,8 @@
       (null? thing)
       (string? thing)
       (number? thing)
-      (char? thing)))
+      (char? thing)
+      (primitive? thing)
+      (procedure? thing)
+      (fexpr? thing)
+      (partial? thing)))

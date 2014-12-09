@@ -54,26 +54,21 @@
       (error (format "EVAL-ASSIGNMENT: tried assigning to non-symbol '~a'" name))))
 
 (define (exp-apply op args env)
-  (let ((fn (exp-eval op env)))
+  (let* ((fn (exp-eval op env))
+	 (final-args
+	  (if (fexpr? fn)
+	      args
+	      (eval-args args env)))
+	 (new-env 
+	  (arglist-env!
+	   (extend-env (environment-of fn))
+	   (arglist-of fn)
+	   final-args)))
     (cond ((primitive? fn)
-	   ((primitive-body fn)
-	    (arglist-env! 
-	     (extend-env env)
-	     (primitive-args fn)
-	     (eval-args args env))))
+	   ((body-of fn) new-env))
 	  ((procedure? fn)
-	   (eval-sequence 
-	    (procedure-body fn)
-	    (arglist-env!
-	     (extend-env (procedure-env fn))
-	     (procedure-args fn)
-	     (eval-args args env))))
+	   (eval-sequence (body-of fn) new-env))
 	  ((fexpr? fn)
 	   (exp-eval 
-	    (eval-sequence
-	     (fexpr-body fn) 
-	     (arglist-env!
-	      (extend-env (fexpr-env fn))
-	      (fexpr-args fn)
-	      args))
+	    (eval-sequence (body-of fn) new-env)
 	    env)))))
