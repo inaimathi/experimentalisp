@@ -2,7 +2,7 @@
 (provide primitive primitive?
 	 procedure procedure?
 	 fexpr fexpr?
-	 make-partial partial? complete?
+	 make-partial partial? complete? collapse
 	 arglist-of environment-of body-of
 
 	 global-env make-env extend-env lookup bind! re-bind! arglist-env!
@@ -59,8 +59,14 @@
 			((null? ks) (error "Too many arguments"))
 			(else (rec (cdr ks) (cdr vs)))))))
     (if (partial? thing)
-	(partial (rec argl new-args) (append (partial-values thing) new-args) (partial-body thing))
+	(partial (rec argl new-args) (append (partial-values thing) new-args) (body-of thing))
 	(partial (rec argl new-args) new-args thing))))
+
+(define (collapse a-partial)
+  (arglist-env!
+   (extend-env (environment-of a-partial))
+   (arglist-of (body-of a-partial))
+   (partial-values a-partial)))
 
 ;;;;;;;;;; Callable forms
 (struct primitive (args body))
@@ -74,7 +80,8 @@
 (define (environment-of thing)
   (cond ((primitive? thing) global-env)
 	((procedure? thing) (procedure-env thing))
-	((fexpr? thing) (fexpr-env thing))))
+	((fexpr? thing) (fexpr-env thing))
+	((partial? thing) (environment-of (body-of thing)))))
 
 (define (arglist-of thing)
   (cond ((primitive? thing) (primitive-args thing))
@@ -85,7 +92,8 @@
 (define (body-of thing)
   (cond ((primitive? thing) (primitive-body thing))
 	((procedure? thing) (procedure-body thing))
-	((fexpr? thing) (fexpr-body thing))))
+	((fexpr? thing) (fexpr-body thing))
+	((partial? thing) (partial-body thing))))
 
 ;;;;;;;;;; Basics
 (define (true? thing)

@@ -59,16 +59,16 @@
 	  (if (fexpr? fn)
 	      args
 	      (eval-args args env)))
-	 (new-env 
-	  (arglist-env!
-	   (extend-env (environment-of fn))
-	   (arglist-of fn)
-	   final-args)))
-    (cond ((primitive? fn)
-	   ((body-of fn) new-env))
-	  ((procedure? fn)
-	   (eval-sequence (body-of fn) new-env))
-	  ((fexpr? fn)
-	   (exp-eval 
-	    (eval-sequence (body-of fn) new-env)
-	    env)))))
+	 (p (make-partial fn final-args)))
+    (if (complete? p)
+	(let ((f (body-of p))
+	      (new-env (collapse p)))
+	  (cond ((primitive? f)
+		 ((body-of f) new-env))
+		((procedure? f)
+		 (eval-sequence (body-of f) new-env))
+		((fexpr? f)
+		 (exp-eval 
+		  (eval-sequence (body-of f) new-env)
+		  env))))
+	p)))
