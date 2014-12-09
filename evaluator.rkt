@@ -8,9 +8,9 @@
 	 exp)
 	((symbol? exp) 
 	 (let ((res (lookup env exp)))
-	   (if res
-	       (cdr res)
-	       (error (format "LOOKUP: undefined value '~a'" exp)))))
+	   (if (null? res)
+	       (error (format "LOOKUP: undefined value '~a'" exp))
+	       (cdr res))))
 	((eq? 'fn (car exp))
 	 (procedure env (cadr exp) (cddr exp)))
 	((eq? 'fexpr (car exp))
@@ -19,7 +19,7 @@
 	 (eval-sequence exp env))
 	((eq? 'if (car exp))
 	 (if (true? (exp-eval (cadr exp) env))
-	     (exp-eval (caddr exp) env)
+	     (begin () (exp-eval (caddr exp) env))
 	     (exp-eval (cadddr exp) env)))
 	((eq? 'def (car exp))
 	 (eval-definition (cadr exp) (caddr exp) env))
@@ -56,7 +56,7 @@
 (define (exp-apply op args env)
   (let* ((fn (exp-eval op env))
 	 (final-args
-	  (if (fexpr? fn)
+	  (if (or (fexpr? fn) (fexpr-partial? fn))
 	      args
 	      (eval-args args env)))
 	 (p (make-partial fn final-args)))

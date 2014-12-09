@@ -1,7 +1,7 @@
 #lang racket/base
 (provide primitive primitive?
 	 procedure procedure?
-	 fexpr fexpr?
+	 fexpr fexpr? fexpr-partial?
 	 make-partial partial? complete? collapse
 	 arglist-of environment-of body-of
 
@@ -66,6 +66,8 @@
 (struct partial (remaining-args values body))
 (define (complete? thing)
   (eq? '() (partial-remaining-args thing)))
+(define (fexpr-partial? thing)
+  (and (partial? thing) (fexpr? (partial-body thing))))
 
 (define (environment-of thing)
   (cond ((primitive? thing) global-env)

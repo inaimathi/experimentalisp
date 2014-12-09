@@ -30,10 +30,11 @@
   (def-prim - (a b) (- a b))
   (def-prim / (a b) (/ a b))
   (def-prim * (a b) (* a b))
-  (def-prim = (a b) (= a b))
+  (def-prim = (a b) (if (eq? a b) 'true 'false))
   (def-prim car (a) (car a))
   (def-prim cdr (a) (cdr a))
   (def-prim cons (a b) (cons a b))
+  (def-prim print (thing) (begin (displayln thing) '()))
 
   ;;;;; Initial display
   (displayln " Base env:")
