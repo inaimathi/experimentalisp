@@ -33,6 +33,7 @@
   (loop))
 
 (define (main)
+  (displayln "experimentalisp 0.001")
   (displayln " Base env:")
   (display " ") (displayln global-env)
   (loop))

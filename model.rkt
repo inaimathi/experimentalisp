@@ -1,8 +1,7 @@
 #lang racket/base
-(provide primitive primitive?
-	 procedure procedure?
-	 fexpr fexpr?
-	 arglist-of body-of environment-of
+(provide primitive primitive? primitive-args primitive-body
+	 procedure procedure? procedure-env procedure-args procedure-body
+	 fexpr fexpr? fexpr-env fexpr-args fexpr-body
 
 	 global-env make-env extend-env lookup bind! re-bind! arglist-env!
 
@@ -54,18 +53,6 @@
 (struct primitive (args body))
 (struct procedure (env args body))
 (struct fexpr (env args body))
-
-(define (arglist-of thing)
-  (cond ((primitive? thing) (primitive-args thing))
-	((procedure? thing) (procedure-args thing))
-	((fexpr? thing) (fexpr-args thing))))
-(define (body-of thing)
-  (cond ((primitive? thing) (primitive-body thing))
-	((procedure? thing) (procedure-body thing))
-	((fexpr? thing) (fexpr-body thing))))
-(define (environment-of thing)
-  (cond ((procedure? thing) (procedure-env thing))
-	((fexpr? thing) (fexpr-env thing))))
 
 ;;;;;;;;;; Basics
 (define (true? thing)

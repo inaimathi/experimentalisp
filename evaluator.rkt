@@ -56,22 +56,24 @@
 (define (exp-apply op args env)
   (let ((fn (exp-eval op env)))
     (cond ((primitive? fn)
-	   ((body-of fn)
+	   ((primitive-body fn)
 	    (arglist-env! 
 	     (extend-env env)
-	     (arglist-of fn)
+	     (primitive-args fn)
 	     (eval-args args env))))
 	  ((procedure? fn)
-	   (eval-sequence (body-of fn)
-			  (arglist-env!
-			   (extend-env (environment-of fn))
-			   (arglist-of fn)
-			   (eval-args args env))))
+	   (eval-sequence 
+	    (procedure-body fn)
+	    (arglist-env!
+	     (extend-env (procedure-env fn))
+	     (procedure-args fn)
+	     (eval-args args env))))
 	  ((fexpr? fn)
-	   (exp-eval (eval-sequence
-		      (body-of fn) 
-		      (arglist-env!
-		       (extend-env (environment-of fn))
-		       (arglist-of fn)
-		       args))
-		     env)))))
+	   (exp-eval 
+	    (eval-sequence
+	     (fexpr-body fn) 
+	     (arglist-env!
+	      (extend-env (fexpr-env fn))
+	      (fexpr-args fn)
+	      args))
+	    env)))))
