@@ -12,20 +12,6 @@
 					 args)
 				,body)))))
 
-(bind! 
- global-env 'the-env
- (primitive '() (lambda (env) env)))
-
-(def-prim + (a b) (+ a b))
-(def-prim - (a b) (- a b))
-(def-prim / (a b) (/ a b))
-(def-prim * (a b) (* a b))
-(def-prim = (a b) (= a b))
-(def-prim car (a) (car a))
-(def-prim cdr (a) (cdr a))
-(def-prim cons (a b) (cons a b))
-
-
 (define (loop)
   (display "EXP>> ")
   (print (exp-eval (read) global-env))
@@ -34,8 +20,25 @@
 
 (define (main)
   (displayln "experimentalisp 0.001")
+
+  ;;;;; Basic primitives
+  (bind! 
+   global-env 'the-env
+   (primitive '() (lambda (env) env)))
+  
+  (def-prim + (a b) (+ a b))
+  (def-prim - (a b) (- a b))
+  (def-prim / (a b) (/ a b))
+  (def-prim * (a b) (* a b))
+  (def-prim = (a b) (= a b))
+  (def-prim car (a) (car a))
+  (def-prim cdr (a) (cdr a))
+  (def-prim cons (a b) (cons a b))
+
+  ;;;;; Initial display
   (displayln " Base env:")
   (display " ") (displayln global-env)
+
   (loop))
 
 ;; (require "experimentalisp.rkt") (main)
