@@ -1,22 +1,53 @@
 # experimentaLISP
 ###### Because I don't have too much to do already
 
+## Status
+
+#### Haskell
+
+- working REPL
+- working fexprs
+
+- still need to clean up the eval and apply functions
+
+#### Racket
+
+- working REPL
+- working fexprs
+- working partials
+
+- still need to write a separate reader (we want to explore some reader macro territory, which means we'll be dealing with things that aren't standard LISP forms)
+
+#### SML
+
+- half a reader
+
+- still need to write everything
+
 ## How to use it
 
 Don't. Not yet, at any rate, I've barely got the reader written. If you absolutely _must_:
 
-- Install [Haskell](https://www.haskell.org/haskellwiki/Haskell)
-- Clone this repo
+1. Clone this repo
 
-then either
+#### Racket version
 
-- Run `ghc Experimentalisp.hs`
-- Run the resulting binary (which should be named `Experimentalisp`)
+2. Install [Racket](http://racket-lang.org/)
+3. Run `racket -t experimentalisp.rkt -m`
 
-or
+#### Haskell version
 
-- Run `ghci Experimentalisp.hs`
-- Evaluate the `main` function in the resulting Haskell REPL
+2. Install [Haskell](https://www.haskell.org/haskellwiki/Haskell)
+
+###### Compiled
+
+3. Run `ghc Experimentalisp.hs`
+4. Run the resulting binary (which should be named `Experimentalisp`)
+
+###### Interpreted
+
+3. Run `ghci Experimentalisp.hs`
+4. Evaluate the `main` function in the resulting Haskell REPL
 
 ## What this is
 
@@ -40,4 +71,4 @@ By its nature, a project like this is going to be highly unstable and prone to e
 
 ##### especially portable
 
-`experimentaLISP` is not portable, except to the extent that our substrate language (currently Haskell) is portable. If you're looking for a Lisp dialect that you can use in a wide variety of substrates and platforms, I suggest [Shen](http://shenlanguage.org/).
+`experimentaLISP` is not portable, except to the extent that our substrate languages are portable. Also, while there _is_ a feature list comparison up top, there may be variations between implementations. We're using a multi-language development approach with an aim to test out implementation details from different perspectives, rather than to have portable infrastructure. If you're looking for a Lisp dialect that you can use in a wide variety of substrates and platforms, look into [Shen](http://shenlanguage.org/).
