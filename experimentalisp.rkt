@@ -1,16 +1,17 @@
-#lang racket
+#lang racket/base
 (provide main)
 
-(require compatibility/defmacro
-	 "evaluator.rkt" "model.rkt")
+(require "evaluator.rkt" "model.rkt")
 
-(define-macro (def-prim name args body)
-  `(bind! global-env ',name
-	  (primitive ',args (lambda (env)
-			      (let ,(map (lambda (arg)
-                                           `(,arg (cdr (lookup env ',arg))))
-					 args)
-				,body)))))
+(define-syntax prim
+  (syntax-rules ()
+    [(prim name (a ...) body)
+     (bind! global-env 'name
+	    (primitive 
+	     '(a ...) (lambda (env)
+			(let ((a (cdr (lookup env 'a)))
+			      ...)
+			  body))))]))
 
 (define (loop)
   (display "EXP>> ")
@@ -26,15 +27,15 @@
    global-env 'the-env
    (primitive '() (lambda (env) env)))
   
-  (def-prim + (a b) (+ a b))
-  (def-prim - (a b) (- a b))
-  (def-prim / (a b) (/ a b))
-  (def-prim * (a b) (* a b))
-  (def-prim = (a b) (if (eq? a b) 'true 'false))
-  (def-prim car (a) (car a))
-  (def-prim cdr (a) (cdr a))
-  (def-prim cons (a b) (cons a b))
-  (def-prim print (thing) (begin (displayln thing) '()))
+  (prim + (a b) (+ a b))
+  (prim - (a b) (- a b))
+  (prim / (a b) (/ a b))
+  (prim * (a b) (* a b))
+  (prim = (a b) (if (eq? a b) 'true 'false))
+  (prim car (a) (car a))
+  (prim cdr (a) (cdr a))
+  (prim cons (a b) (cons a b))
+  (prim print (thing) (begin (displayln thing) '()))
 
   ;;;;; Initial display
   (displayln " Base env:")
