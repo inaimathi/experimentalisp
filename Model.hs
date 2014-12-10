@@ -1,6 +1,6 @@
 module Model ( LispVal(..)
              , true_p, self_evaluating_p, lisp_prim
-             , Environment
+             , Environment, global_env
              , Model.empty, Model.lookup, Model.fromList, bind, extend, arglist_env) where
 
 import Data.Map hiding (map)
@@ -89,3 +89,15 @@ self_evaluating_p (Str _) = True
 self_evaluating_p (Num _) = True
 self_evaluating_p (Chr _) = True
 self_evaluating_p _ = False
+
+global_env :: Environment
+global_env = Model.fromList Model.empty 
+             [ ("+", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a + b, env)))
+             , ("-", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a - b, env)))
+             , ("/", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a `div` b, env)))
+             , ("*", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a * b, env)))
+             , ("=", lisp_prim ["a", "b"] (\env [a, b] -> (Bool $ a == b, env)))
+             , ("car", lisp_prim ["a"] (\env [Cell car _] -> (car, env)))
+             , ("cdr", lisp_prim ["a"] (\env [Cell _ cdr] -> (cdr, env)))
+             , ("cons", lisp_prim ["a", "b"] (\env [a, b] -> (Cell a b, env)))
+             ]

@@ -54,12 +54,13 @@ eval_assignment (Sym name) exp env = case Model.lookup env name of
 eval_assignment name _ _ = error $ "Tried to assign to non-symbol: " ++ show name
 
 apply :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
-apply exp args env = case eval exp env of
-                      (Primitive fn arglist, env') -> 
-                          fn $ arglist_env (extend env') arglist $ eval_args args env'
-                      (Procedure local_env arglist body, env') -> 
-                          eval_sequence body $ arglist_env (extend local_env) arglist $ eval_args args env'
-                      (Fexpr local_env arglist body, env') -> 
-                          eval res env'
-                              where (res, _) = eval_sequence body $ arglist_env (extend local_env) arglist args
-                      _ -> error $ "Undefined function '" ++ show exp ++ "'"
+apply exp args env = 
+    case eval exp env of
+      (Primitive fn arglist, env') -> 
+          fn $ arglist_env (extend env') arglist $ eval_args args env'
+      (Procedure local_env arglist body, env') -> 
+          eval_sequence body $ arglist_env (extend local_env) arglist $ eval_args args env'
+      (Fexpr local_env arglist body, env') -> 
+          eval res env'
+                where (res, _) = eval_sequence body $ arglist_env (extend local_env) arglist args
+      _ -> error $ "Undefined function '" ++ show exp ++ "'"
