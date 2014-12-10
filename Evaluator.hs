@@ -33,11 +33,10 @@ eval_sequence (Cell car cdr) env = eval_sequence cdr new_env
 eval_sequence exp _ = error $ "Called eval_sequence on a non-cell: " ++ show exp
 
 eval_args :: LispVal -> Environment -> LispVal
-eval_args (Cell car Nil) env = (Cell res Nil)
-    where (res, _) = eval car env
 eval_args (Cell car cdr) env = (Cell res (eval_args cdr env))
     where (res, _) = eval car env
-eval_args argl _ = error $ "Called eval_args ona non-cell: " ++ show argl
+eval_args Nil _ = Nil
+eval_args argl _ = error $ "Called eval_args on a non-cell: " ++ show argl
 
 eval_definition :: LispVal -> LispVal -> Environment -> (LispVal, Environment)
 eval_definition (Sym name) exp env = case Model.lookup env name of

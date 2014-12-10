@@ -74,9 +74,10 @@ extend env = Env env $ Data.Map.empty
 arglist_env :: Environment -> LispVal -> LispVal -> Environment
 arglist_env env Nil Nil = env
 arglist_env env (Cell (Sym k) ks) (Cell v vs) = arglist_env (bind env k v) ks vs
-arglist_env _ _ Nil = error "Too few arguments..."
-arglist_env _ Nil _ = error "Too many arguments..."
-arglist_env env ks vs = error . unlines $ ["Something odd happened", show ks, show vs, show env]
+-- arglist_env _ _ Nil = error "Too few arguments..."
+-- arglist_env _ Nil _ = error "Too many arguments..."
+-- arglist_env env ks vs = error . unlines $ ["Something odd happened", show ks, show vs, show env]
+arglist_env env _ _ = env
 
 true_p :: LispVal -> Bool
 true_p (Bool False) = False
@@ -90,6 +91,14 @@ self_evaluating_p (Num _) = True
 self_evaluating_p (Chr _) = True
 self_evaluating_p _ = False
 
+lisp_env :: Environment -> LispVal
+lisp_env None = Nil
+lisp_env (Env next frame) = Cell (map_to_conses frame) $ lisp_env next
+    where map_to_conses frame = recur $ toList frame
+              where recur ((k, v):rest) = Cell (Cell (Sym k) v) $ recur rest
+                    recur [] = Nil
+
+
 global_env :: Environment
 global_env = Model.fromList Model.empty 
              [ ("+", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a + b, env)))
@@ -100,4 +109,5 @@ global_env = Model.fromList Model.empty
              , ("car", lisp_prim ["a"] (\env [Cell car _] -> (car, env)))
              , ("cdr", lisp_prim ["a"] (\env [Cell _ cdr] -> (cdr, env)))
              , ("cons", lisp_prim ["a", "b"] (\env [a, b] -> (Cell a b, env)))
+             , ("the-env", lisp_prim ["a", "b"] (\env _ -> (lisp_env env, env)))
              ]
