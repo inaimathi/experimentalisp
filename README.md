@@ -3,12 +3,12 @@
 
 ## Status
 
-#### Haskell
+#### Haskell/JS
 
 - working REPL
 - working fexprs
 
-- still need to clean up the eval and apply functions
+- still need to clean up the eval and apply functions. The environment is inherently mutating, and we need to reflect that (or pull some rather fancy footwork with respect to mutual recursion)
 
 #### Racket
 
@@ -29,6 +29,10 @@
 Don't. Not yet, at any rate, I've barely got the reader written. If you absolutely _must_:
 
 1. Clone this repo
+
+#### JavaScript version
+
+2. Open `Experimentascript.html` in a browser _(note that you still need [Haskell](https://www.haskell.org/haskellwiki/Haskell) and [Haste](http://haste-lang.org/) to actually edit it, but you can run it without those)_
 
 #### Racket version
 
