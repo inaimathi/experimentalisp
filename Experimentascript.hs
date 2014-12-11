@@ -7,9 +7,6 @@ import Evaluator
 import Haste
 import Data.IORef
 
-setContent :: ElemID -> String -> IO ()
-setContent id newContent = withElem id (\e -> setProp e "innerHTML" newContent)
-
 prependContent :: ElemID -> String -> IO ()
 prependContent id newContent = withElem id (\e -> do cont <- getProp e "innerHTML"
                                                      setProp e "innerHTML" $ concat [newContent, "\n\n", cont]
@@ -31,10 +28,12 @@ eval_contents inp env = do Just val <- getValue inp
                                      return env
 
 main :: IO ()
-main = withElems ["eval-button", "repl-input"] $ \[btn, inp] -> 
+main = withElem "repl-input" $ \inp -> 
        do env_ref <- newIORef global_env 
-          onEvent btn OnClick $ \_ _ -> do env <- readIORef env_ref 
-                                           env' <- eval_contents inp env
-                                           _ <- writeIORef env_ref env'
-                                           return ()
+          onEvent inp OnKeyPress $ \k -> case k of
+                                           13 -> do env <- readIORef env_ref 
+                                                    env' <- eval_contents inp env
+                                                    _ <- writeIORef env_ref env'
+                                                    return ()
+                                           _ -> return ()
           return ()
