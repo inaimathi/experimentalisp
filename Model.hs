@@ -1,7 +1,7 @@
 module Model ( LispVal(..)
              , true_p, self_evaluating_p, lisp_prim
              , Environment, global_env
-             , Model.empty, Model.lookup, Model.fromList, bind, extend, arglist_env) where
+             , Model.lookup, bind, extend, arglist_env) where
 
 import Data.Map hiding (map)
 
@@ -49,27 +49,20 @@ lisp_prim args fn = Primitive (\env -> fn env $ map (Model.lookup env) args) $ a
     where argl [] = Nil
           argl (a:rest) = Cell (Sym a) $ argl rest
 
-data Environment = Env Environment (Map String LispVal)
-                 | None deriving (Show)
-
-fromList :: Environment -> [(String, LispVal)] -> Environment
-fromList env tbl = Env env $ Data.Map.fromList tbl
-
-empty :: Environment
-empty = Env None Data.Map.empty
+type Environment = [Map String LispVal]
 
 lookup :: Environment -> String -> LispVal
-lookup None _ = Nil
-lookup (Env prev env) k = case Data.Map.lookup k env of
-                            Nothing -> Model.lookup prev k
-                            Just v -> v
+lookup [] _ = Nil
+lookup (env:rest) k = case Data.Map.lookup k env of
+                        Nothing -> Model.lookup rest k
+                        Just v -> v
 
 bind :: Environment -> String -> LispVal -> Environment
-bind None _ _ = None
-bind (Env prev env) k v = Env prev $ insert k v env
+bind [] _ _ = []
+bind (env:rest) k v = (insert k v env) : rest
 
 extend :: Environment -> Environment
-extend env = Env env $ Data.Map.empty
+extend env = empty:env
 
 arglist_env :: Environment -> LispVal -> LispVal -> Environment
 arglist_env env Nil Nil = env
@@ -92,22 +85,22 @@ self_evaluating_p (Chr _) = True
 self_evaluating_p _ = False
 
 lisp_env :: Environment -> LispVal
-lisp_env None = Nil
-lisp_env (Env next frame) = Cell (map_to_conses frame) $ lisp_env next
+lisp_env [] = Nil
+lisp_env (frame:rest) = Cell (map_to_conses frame) $ lisp_env rest
     where map_to_conses frame = recur $ toList frame
               where recur ((k, v):rest) = Cell (Cell (Sym k) v) $ recur rest
                     recur [] = Nil
 
 
 global_env :: Environment
-global_env = Model.fromList Model.empty 
-             [ ("+", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a + b, env)))
-             , ("-", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a - b, env)))
-             , ("/", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a `div` b, env)))
-             , ("*", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a * b, env)))
-             , ("=", lisp_prim ["a", "b"] (\env [a, b] -> (Bool $ a == b, env)))
-             , ("car", lisp_prim ["a"] (\env [Cell car _] -> (car, env)))
-             , ("cdr", lisp_prim ["a"] (\env [Cell _ cdr] -> (cdr, env)))
-             , ("cons", lisp_prim ["a", "b"] (\env [a, b] -> (Cell a b, env)))
-             , ("the-env", lisp_prim ["a", "b"] (\env _ -> (lisp_env env, env)))
-             ]
+global_env = [fromList 
+              [ ("+", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a + b, env)))
+              , ("-", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a - b, env)))
+              , ("/", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a `div` b, env)))
+              , ("*", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a * b, env)))
+              , ("=", lisp_prim ["a", "b"] (\env [a, b] -> (Bool $ a == b, env)))
+              , ("car", lisp_prim ["a"] (\env [Cell car _] -> (car, env)))
+              , ("cdr", lisp_prim ["a"] (\env [Cell _ cdr] -> (cdr, env)))
+              , ("cons", lisp_prim ["a", "b"] (\env [a, b] -> (Cell a b, env)))
+              , ("the-env", lisp_prim ["a", "b"] (\env _ -> (lisp_env env, env)))
+             ]]
