@@ -51,12 +51,16 @@ eval_args argl _ = error $ "Called eval_args on a non-cell: " ++ show argl
 
 eval_definition :: LispVal -> LispVal -> Environment -> Result
 eval_definition (Sym name) exp env = case Model.lookup env name of
-                                       Nil -> Mod Nil $ bind new_env name res
+                                       Nil -> Mod Nil env''
                                            where evaled = eval exp env
-                                                 res = res_of evaled
-                                                 new_env = case evaled of
+                                                 env' = case evaled of
                                                              (Res _) -> env
                                                              (Mod _ e) -> e
+                                                 env'' = bind env' name res
+                                                 res = case res_of evaled of
+                                                         Procedure _ args body -> Procedure env'' args body
+                                                         Fexpr _ args body -> Fexpr env'' args body
+                                                         exp -> exp
                                        _ -> error $ "Symbol '" ++ name ++ "' already bound ..."
 eval_definition name _ _ = error $ "Tried to bind to non-symbol: " ++ show name
 
