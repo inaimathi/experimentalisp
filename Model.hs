@@ -12,7 +12,7 @@ data LispVal = Cell LispVal LispVal
              | Bool Bool
              | Chr Char 
              | Nil
-             | Primitive (Environment -> (LispVal, Environment)) LispVal
+             | Primitive (Environment -> LispVal) LispVal
              | Procedure Environment LispVal LispVal
              | Fexpr Environment LispVal LispVal
 
@@ -44,7 +44,7 @@ instance Show LispVal where
     show (Procedure _ args _) = "<fn " ++ show args ++ ">"
     show (Fexpr _ args _) = "<fexpr " ++ show args ++ ">"
 
-lisp_prim :: [String] -> (Environment -> [LispVal] -> (LispVal, Environment)) -> LispVal
+lisp_prim :: [String] -> (Environment -> [LispVal] -> LispVal) -> LispVal
 lisp_prim args fn = Primitive (\env -> fn env $ map (Model.lookup env) args) $ argl args
     where argl [] = Nil
           argl (a:rest) = Cell (Sym a) $ argl rest
@@ -66,11 +66,10 @@ extend env = empty:env
 
 arglist_env :: Environment -> LispVal -> LispVal -> Environment
 arglist_env env Nil Nil = env
+arglist_env _ ks Nil = error $ "Too few arguments: still expecting " ++ show ks
+arglist_env _ Nil vs = error $ "Too many arguments: " ++ show vs
 arglist_env env (Cell (Sym k) ks) (Cell v vs) = arglist_env (bind env k v) ks vs
--- arglist_env _ _ Nil = error "Too few arguments..."
--- arglist_env _ Nil _ = error "Too many arguments..."
--- arglist_env env ks vs = error . unlines $ ["Something odd happened", show ks, show vs, show env]
-arglist_env env _ _ = env
+arglist_env env ks vs = error . unlines $ ["Something odd happened", show ks, show vs, show env]
 
 true_p :: LispVal -> Bool
 true_p (Bool False) = False
@@ -94,13 +93,13 @@ lisp_env (frame:rest) = Cell (map_to_conses frame) $ lisp_env rest
 
 global_env :: Environment
 global_env = [fromList 
-              [ ("+", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a + b, env)))
-              , ("-", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a - b, env)))
-              , ("/", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a `div` b, env)))
-              , ("*", lisp_prim ["a", "b"] (\env [Num a, Num b] -> (Num $ a * b, env)))
-              , ("=", lisp_prim ["a", "b"] (\env [a, b] -> (Bool $ a == b, env)))
-              , ("car", lisp_prim ["a"] (\env [Cell car _] -> (car, env)))
-              , ("cdr", lisp_prim ["a"] (\env [Cell _ cdr] -> (cdr, env)))
-              , ("cons", lisp_prim ["a", "b"] (\env [a, b] -> (Cell a b, env)))
-              , ("the-env", lisp_prim ["a", "b"] (\env _ -> (lisp_env env, env)))
+              [ ("+", lisp_prim ["a", "b"] (\_ [Num a, Num b] -> Num $ a + b))
+              , ("-", lisp_prim ["a", "b"] (\_ [Num a, Num b] -> Num $ a - b))
+              , ("/", lisp_prim ["a", "b"] (\_ [Num a, Num b] -> Num $ a `div` b))
+              , ("*", lisp_prim ["a", "b"] (\_ [Num a, Num b] -> Num $ a * b))
+              , ("=", lisp_prim ["a", "b"] (\_ [a, b] -> Bool $ a == b))
+              , ("car", lisp_prim ["a"] (\_ [Cell car _] -> car))
+              , ("cdr", lisp_prim ["a"] (\_ [Cell _ cdr] -> cdr))
+              , ("cons", lisp_prim ["a", "b"] (\_ [a, b] -> Cell a b))
+              , ("the-env", lisp_prim [] (\env _ -> lisp_env env))
              ]]
