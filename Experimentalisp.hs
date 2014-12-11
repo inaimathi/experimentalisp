@@ -4,8 +4,11 @@ import Model
 import Reader
 import Evaluator
 
+import System.IO
+
 main_loop :: Environment -> IO ()
-main_loop env = do putStr " >> "
+main_loop env = do putStr "EXP>> "
+                   hFlush stdout
                    ln <- getLine
                    case lisp_read ln of
                      Right res -> let evaled = eval res env
