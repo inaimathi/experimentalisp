@@ -23,9 +23,12 @@ eval_contents :: Elem -> Environment -> IO Environment
 eval_contents inp env = 
     do Just val <- getValue inp
        case lisp_read val of
-         Right exp -> let (res, env') = Evaluator.eval exp env
-                      in do prependContent "repl-log" . escape $ concat [val, "\n   => ", show res]
-                            return env'                               
+         Right exp -> let evaled = Evaluator.eval exp env
+                          env' = case evaled of
+                                   Res _ -> env
+                                   Mod _ e -> e
+                      in do prependContent "repl-log" . escape $ concat [val, "\n   => ", show $ res_of evaled]
+                            return env'
          _ -> do prependContent "repl-log" "Read error ..."
                  return env
 
