@@ -5,7 +5,7 @@ import Reader
 import Evaluator
 
 import Pipes
-import Control.Monad (unless, when)
+import Control.Monad (unless)
 import Control.Exception (try, throwIO)
 import qualified GHC.IO.Exception as G
 import System.IO
@@ -24,8 +24,6 @@ stdinLn = do
 
 reader :: (Monad m) => [String] -> Pipe String LispVal m ()
 reader acc = do ln <- await
---                when ("" == ln) $ yield $ Sym "EOL"
---                yield $ Str ln
                 case strip ln of
                   ":c" -> reader []
                   _ -> case lisp_read . unlines $ reverse (ln:acc) of
@@ -51,17 +49,6 @@ prompt = do lift $ putStr "\nEXP>> "
               Left e@(G.IOError { G.ioe_type = t}) ->
                   lift $ unless (t == G.ResourceVanished) $ throwIO e
               Right () -> prompt
-                    
-
-toStdout :: Show a => Consumer a IO ()
-toStdout = do
-  msg <- await
-  x   <- lift $ try $ putStr $ show msg
-  case x of
-    Left e@(G.IOError { G.ioe_type = t}) ->
-           lift $ unless (t == G.ResourceVanished) $ throwIO e
-    Right () -> do lift $ hFlush stdout
-                   toStdout
 
 main :: IO ()
 main = do putStrLn $ "experimentaLISP v0.00001"

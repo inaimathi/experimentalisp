@@ -10,7 +10,7 @@
   (loop))
 
 (define (main)
-  (displayln "experimentalisp 0.001")
+  (displayln "experimentaLISP v0.00001")
 
   ;;;;; Initial display
   (displayln " Base env:")
