@@ -24,9 +24,21 @@
 
 - still need to write everything
 
+## Various Notes
+
+- We need some kind of port abstraction. In three flavours: `in`, `out` and `in/out`. That'll let us deal with a whole bunch of stuff inside the language, including files, sockets, and standard in/out.
+- We should probably separate `fexpr`s into two stages; the expansion and the evaluation of the expansion. If done properly, we can then provide `expand` in the guest language for a pretty cheap macroexpander.
+- `the-env`; returns the current environment as an expression
+- That environment must have the operations `bind`, `bound?` and `lookup` implemented.
+	- `lookup` must take an environment and a symbol, and return the value to which said symbol is bound in the given environment.
+	- `bound?` must take an environment and a symbol, and return `true` if that symbol is bound in that environment
+	- `bind` must take an environment and a symbol, and return a new environment in which that symbol is bound. It should not mutate the existing environment.
+	
 ## How to use it
 
-Don't. Not yet, at any rate, I've barely got the reader written. If you absolutely _must_:
+Don't.
+
+Not yet, at any rate, I've barely got the reader written. If you absolutely _must_:
 
 1. Clone this repo
 
