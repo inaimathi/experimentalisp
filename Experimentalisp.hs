@@ -6,13 +6,12 @@ import Evaluator
 
 import Pipes
 import Control.Monad (unless)
-import Control.Exception (try, throwIO)
-import qualified GHC.IO.Exception as G
 import System.IO
 import Data.Char (isSpace)
 
-strip :: String -> String
-strip = takeWhile (not . isSpace) . dropWhile isSpace
+main :: IO ()
+main = do putStrLn $ "experimentaLISP v0.00001"
+          runEffect $ stdinLn >-> reader >-> evaluator >-> prompt
 
 stdinLn :: Producer String IO ()
 stdinLn = do
@@ -22,36 +21,34 @@ stdinLn = do
             yield str
             stdinLn
 
-reader :: (Monad m) => [String] -> Pipe String LispVal m ()
-reader acc = do ln <- await
-                case strip ln of
-                  ":c" -> reader []
-                  _ -> case lisp_read . unlines $ reverse (ln:acc) of
-                         Right res -> do yield res
-                                         reader []
-                         Left _ -> reader $ ln : acc
+reader :: (Monad m) => Pipe String LispVal m ()
+reader = loop []
+    where loop acc = do 
+            ln <- await
+            case strip ln of
+              ":c" -> loop []
+              _ -> case lisp_read . unlines $ reverse (ln:acc) of
+                     Right res -> do yield res
+                                     loop []
+                     Left _ -> loop $ ln : acc
 
-evaluator :: (Monad m) => Environment -> Pipe LispVal LispVal m ()
-evaluator env = do exp <- await
-                   let evaled = eval exp env
-                       env' = case evaled of
-                                (Res _) -> env
-                                (Mod _ e) -> e
-                   do yield $ res_of evaled
-                      evaluator env'
+evaluator :: (Monad m) => Pipe LispVal LispVal m ()
+evaluator = loop global_env
+    where loop env = do 
+            exp <- await
+            let evaled = eval exp env
+                env' = case evaled of
+                         (Res _) -> env
+                         (Mod _ e) -> e
+            do yield $ res_of evaled
+               loop env'
 
 prompt :: Show a => Consumer a IO ()
 prompt = do lift $ putStr "\nEXP>> "
             lift $ hFlush stdout
             msg <- await
-            x <- lift $ try $ putStrLn $ show msg
-            case x of
-              Left e@(G.IOError { G.ioe_type = t}) ->
-                  lift $ unless (t == G.ResourceVanished) $ throwIO e
-              Right () -> prompt
+            lift $ putStrLn $ show msg
+            prompt
 
-main :: IO ()
-main = do putStrLn $ "experimentaLISP v0.00001"
-          runEffect $ stdinLn >-> 
-                    reader [] >-> evaluator global_env >-> 
-                    prompt
+strip :: String -> String
+strip = takeWhile (not . isSpace) . dropWhile isSpace
