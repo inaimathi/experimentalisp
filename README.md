@@ -33,7 +33,13 @@
 	- `lookup` must take an environment and a symbol, and return the value to which said symbol is bound in the given environment.
 	- `bound?` must take an environment and a symbol, and return `true` if that symbol is bound in that environment
 	- `bind` must take an environment and a symbol, and return a new environment in which that symbol is bound. It should not mutate the existing environment.
-	
+
+- Typeclasses:
+	- Each typeclass is an environment mapping to the different types that implement it to the implementation of the specific methods entailed by that typeclass
+	- Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass
+	- It looks like the generic function approach might be easier to implement, and it would have one fewer lookup level (each function would directly dispatch on arguments, rather than pointing to a typeclass entry)
+		- Side-note: it looks like some of the problems that typeclass implementations are running into will be solved, approximately, by moving closer to the generic-function approach
+
 ## How to use it
 
 Don't.
