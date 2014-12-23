@@ -3,11 +3,11 @@ module Main where
 import Model
 import Reader
 import Evaluator
+import Core
 
 import Pipes
 import Control.Monad (unless)
 import System.IO
-import Data.Char (isSpace)
 
 main :: IO ()
 main = do putStrLn $ "experimentaLISP v0.00001"
@@ -18,14 +18,22 @@ stdinLn = do
   eof <- lift isEOF
   unless eof $ do
             str <- lift getLine
-            yield str
+            case take 1 str of
+              [':'] -> case words str of
+                         [":c"] -> yield ":c"
+                         [":load", fname] -> do f <- lift $ readFile fname
+                                                lift $ putStrLn $ "Loading " ++ fname ++ " ..."
+                                                mapM_ (\ln -> do { lift $ putStrLn ln ; yield ln }) $ lines f
+                                                stdinLn
+                         _ -> stdinLn
+              _ -> yield str
             stdinLn
 
 reader :: (Monad m) => Pipe String LispVal m ()
 reader = loop []
     where loop acc = do 
             ln <- await
-            case strip ln of
+            case ln of
               ":c" -> loop []
               _ -> case lisp_read . unlines $ reverse (ln:acc) of
                      Right res -> do yield res
@@ -49,6 +57,3 @@ prompt = do lift $ putStr "\nEXP>> "
             msg <- await
             lift $ putStrLn $ show msg
             prompt
-
-strip :: String -> String
-strip = takeWhile (not . isSpace) . dropWhile isSpace
