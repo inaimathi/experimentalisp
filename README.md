@@ -40,6 +40,18 @@
 	- It looks like the generic function approach might be easier to implement, and it would have one fewer lookup level (each function would directly dispatch on arguments, rather than pointing to a typeclass entry)
 		- Side-note: it looks like some of the problems that typeclass implementations are running into will be solved, approximately, by moving closer to the generic-function approach
 
+- Errors:
+	- An environment is a set of symbol bindings AND a set of handler bindings. If an error happens, we match in the handler bindings (the default, top-level environment should have a default handler that drops the user into a prompt)
+
+- Modules:
+	- Seemslike they could basically _be_ environments (except for the parameterizing thing, for which they'd have to be functions which return environments).
+	- You want to support
+		- use foo (include an environment in the image; this is basically just an environment merge)
+		- from foo import bar (put a specific symbol from an environment into the current one; `(def bar (lookup bar foo))`)
+		- from foo import bar as baz (put a specific symbol from an environment into the current one; `(def baz (lookup bar foo))`)
+		- parameterizing environments
+	- That may actually be backwards too; it seems like you could get the same effect by saying "here's my code, run it in this environment". Or maybe "...run with this qualified environment". Worth exploring; this seems like one of the big wins of having first-class envs
+
 ## How to use it
 
 Don't.
