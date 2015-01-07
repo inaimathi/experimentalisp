@@ -88,7 +88,7 @@
 	 (re-bind! (cdr env) name exp)))
   env)
 
-(define-syntax prim
+(define-syntax prim!
   (syntax-rules ()
     [(prim env name (a ...) body)
      (bind! env 'name
@@ -104,15 +104,15 @@
      env 'the-env
      (primitive '() (lambda (env) env)))
     
-    (prim env + (a b) (+ a b))
-    (prim env - (a b) (- a b))
-    (prim env / (a b) (/ a b))
-    (prim env * (a b) (* a b))
-    (prim env = (a b) (if (eq? a b) 'true 'false))
-    (prim env car (a) (car a))
-    (prim env cdr (a) (cdr a))
-    (prim env cons (a b) (cons a b))
-    (prim env print (thing) (begin (displayln thing) '()))
+    (prim! env + (a b) (+ a b))
+    (prim! env - (a b) (- a b))
+    (prim! env / (a b) (/ a b))
+    (prim! env * (a b) (* a b))
+    (prim! env = (a b) (if (eq? a b) 'true 'false))
+    (prim! env car (a) (car a))
+    (prim! env cdr (a) (cdr a))
+    (prim! env cons (a b) (cons a b))
+    (prim! env print (thing) (begin (displayln thing) '()))
     env))
 
 ;;;;;;;;;; Basics
