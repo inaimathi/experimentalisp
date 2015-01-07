@@ -26,17 +26,19 @@
 
 ## Various Notes
 
+- An alternative to `&rest` arguments is just making `list` a special form. Trying it out.
 - We need some kind of port abstraction. In three flavours: `in`, `out` and `in/out`. That'll let us deal with a whole bunch of stuff inside the language, including files, sockets, and standard in/out.
 - We should probably separate `fexpr`s into two stages; the expansion and the evaluation of the expansion. If done properly, we can then provide `expand` in the guest language for a pretty cheap macroexpander.
 - `the-env`; returns the current environment as an expression
-- That environment must have the operations `bind`, `bound?` and `lookup` implemented.
+- That environment must have the operations `bind`, `bound?`, `lookup` and `extend` implemented.
 	- `lookup` must take an environment and a symbol, and return the value to which said symbol is bound in the given environment.
 	- `bound?` must take an environment and a symbol, and return `true` if that symbol is bound in that environment
 	- `bind` must take an environment and a symbol, and return a new environment in which that symbol is bound. It should not mutate the existing environment.
+	- `extend` must take an environment and add a frame to it
 
 - Typeclasses:
 	- Each typeclass is an environment mapping to the different types that implement it to the implementation of the specific methods entailed by that typeclass
-	- Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass
+	- Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass.
 	- It looks like the generic function approach might be easier to implement, and it would have one fewer lookup level (each function would directly dispatch on arguments, rather than pointing to a typeclass entry)
 		- Side-note: it looks like some of the problems that typeclass implementations are running into will be solved, approximately, by moving closer to the generic-function approach
 
@@ -50,7 +52,10 @@
 		- from foo import bar (put a specific symbol from an environment into the current one; `(def bar (lookup bar foo))`)
 		- from foo import bar as baz (put a specific symbol from an environment into the current one; `(def baz (lookup bar foo))`)
 		- parameterizing environments
-	- That may actually be backwards too; it seems like you could get the same effect by saying "here's my code, run it in this environment". Or maybe "...run with this qualified environment". Worth exploring; this seems like one of the big wins of having first-class envs
+	- That may actually be backwards too; it seems like you could get the same effect by saying "here's my code, run it in this environment". Or maybe "...run with this qualified environment". Worth exploring; this seems like one of the big wins of having first-class envs.
+	- The environment approach may be a bit _too_ porous. What kind of use cases do you really have for this stuff? Lets start with the obvious ones:
+		- If you have a piece of code from some untrsted external source, you want to be able to say something like "Run this in an environment where the IO procedures are switched out with nerfed ones".
+		- If you have a piece of code that implements something with the data structure `foo`, you want to be able to say "Run this, but replace `foo` with the equivalently-interacting `bar` (for example, maybe switch out the particular tree-representation in a `Set` implementation)
 
 ## How to use it
 

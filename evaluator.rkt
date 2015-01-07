@@ -11,6 +11,8 @@
 	   (if (null? res)
 	       (error (format "LOOKUP: undefined value '~a'" exp))
 	       (cdr res))))
+	((eq? 'list (car exp))
+	 (eval-args (cdr exp) env))
 	((eq? 'fn (car exp))
 	 (procedure env (cadr exp) (cddr exp)))
 	((eq? 'fexpr (car exp))

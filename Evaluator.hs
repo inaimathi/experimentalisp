@@ -13,6 +13,8 @@ res_of (Mod v _) = v
 eval :: LispVal -> Environment -> Result
 eval (Sym exp) env = 
     Res $ Model.lookup env exp
+eval (Cell (Sym "list") rest) env =
+    Res $ eval_args rest env
 eval (Cell (Sym "fn") (Cell args body)) env = 
     Res $ Procedure env args body
 eval (Cell (Sym "fexpr") (Cell args body)) env =
