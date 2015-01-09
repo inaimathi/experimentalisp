@@ -36,6 +36,10 @@
 	- `bind` must take an environment and a symbol, and return a new environment in which that symbol is bound. It should not mutate the existing environment.
 	- `extend` must take an environment and add a frame to it
 
+- Types:
+	- Think about procedure types. Specifically, think about cons/car/cdr (you clearly need type variables here, and you need to understand the concept of container types as it applies)
+	- Sane interface seems to be `type`/`type-of`/`type-check`
+
 - Typeclasses:
 	- Each typeclass is an environment mapping to the different types that implement it to the implementation of the specific methods entailed by that typeclass
 	- Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass.
@@ -44,6 +48,7 @@
 
 - Errors:
 	- An environment is a set of symbol bindings AND a set of handler bindings. If an error happens, we match in the handler bindings (the default, top-level environment should have a default handler that drops the user into a prompt)
+	- Errors should probably get their own type in the LispVal declaration (as well as their own type in the type system)
 
 - Modules:
 	- Seemslike they could basically _be_ environments (except for the parameterizing thing, for which they'd have to be functions which return environments).

@@ -13,6 +13,8 @@ res_of (Mod v _) = v
 eval :: LispVal -> Environment -> Result
 eval (Sym exp) env = 
     Res $ Model.lookup env exp
+eval exp@(Cell (Sym "error") rest) env =
+    Res $ exp
 eval (Cell (Sym "list") rest) env =
     Res $ eval_args rest env
 eval (Cell (Sym "fn") (Cell args body)) env = 
@@ -35,7 +37,7 @@ eval (Cell car cdr) env =
     Res $ apply car cdr env
 eval exp _ 
     | self_evaluating_p exp = Res exp
-    | otherwise = error $ "EVAL :: invalid form " ++ show exp
+    | otherwise = Res $ lisp_error "invalid-form" exp
 
 eval_sequence :: LispVal -> Environment -> Result
 eval_sequence (Cell car Nil) env = eval car env
@@ -63,8 +65,8 @@ eval_definition (Sym name) exp env = case Model.lookup env name of
                                                          Procedure _ args body -> Procedure env'' args body
                                                          Fexpr _ args body -> Fexpr env'' args body
                                                          exp -> exp
-                                       _ -> error $ "Symbol '" ++ name ++ "' already bound ..."
-eval_definition name _ _ = error $ "Tried to bind to non-symbol: " ++ show name
+                                       _ -> Res $ lisp_error "invalid-bind" (Sym name)
+eval_definition name _ _ = Res $ lisp_error "invalid-bind-target" name
 
 eval_assignment :: LispVal -> LispVal -> Environment -> Result
 eval_assignment (Sym name) exp env = case Model.lookup env name of
@@ -75,17 +77,21 @@ eval_assignment (Sym name) exp env = case Model.lookup env name of
                                                              Mod _ e -> e
                                                              _ -> env
                                                  
-                                       _ -> error $ "Tried to assign to unbound symbol '" ++ name ++ "' ..."
-eval_assignment name _ _ = error $ "Tried to assign to non-symbol: " ++ show name
+                                       _ -> Res $ lisp_error "invalid-assignment" (Sym name)
+eval_assignment name _ _ = Res $ lisp_error "invalid-assignment-target" name
 
 apply :: LispVal -> LispVal -> Environment -> LispVal
 apply exp args env = 
     case res_of $ eval exp env of
       Primitive fn arglist -> 
-          fn $ arglist_env (extend env) arglist $ eval_args args env
+          case lisp_length arglist `compare` lisp_length evaled of
+            LT -> lisp_error "too-many-arguments" evaled
+            GT -> lisp_error "too-few-arguments" Nil
+            _  -> fn $ arglist_env (extend env) arglist evaled
+          where evaled = eval_args args env
       Procedure local_env arglist body -> 
           res_of $ eval_sequence body $ arglist_env (extend local_env) arglist $ eval_args args env
       Fexpr local_env arglist body -> 
           res_of $ eval res env
               where res = res_of $ eval_sequence body $ arglist_env (extend local_env) arglist args
-      _ -> error $ "Undefined function '" ++ show exp ++ "'"
+      _ -> lisp_error "undefined-function" exp
