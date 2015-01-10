@@ -1,7 +1,7 @@
 module Model ( LispVal(..)
-             , true_p, self_evaluating_p, lisp_prim, lisp_length, lisp_error, lisp_type, mk_type
+             , true_p, self_evaluating_p, lisp_prim, lisp_length, lisp_type
              , Environment
-             , Model.lookup, bind, extend, arglist_env
+             , extend, bind, bind_handler, Model.lookup, lookup_handler
              , Model.fromList, Data.Map.toList) where
 
 import Data.Map hiding (map)
@@ -13,6 +13,7 @@ data LispVal = Cell LispVal LispVal
              | Bool Bool
              | Chr Char 
              | Nil
+             | Err String LispVal
              | Type String
              | Primitive (Environment -> LispVal) LispVal
              | Procedure Environment LispVal LispVal
@@ -24,6 +25,7 @@ lisp_type (Sym _) = Type "symbol"
 lisp_type (Num _) = Type "number"
 lisp_type (Bool _) = Type "boolean"
 lisp_type (Chr _) = Type "character"
+lisp_type (Err _ _) = Type "error"
 lisp_type Nil = Nil
 --- NEED TO FIX THESE THREE 
 --- (callables should be compound types. 
@@ -45,12 +47,6 @@ lisp_type (Cell a b) = case collapsed b $ lisp_type a of
           collapsed _ _ = Nothing
           naive = (Cell (lisp_type a) (lisp_type b))
 
-mk_type :: LispVal -> LispVal
-mk_type (Sym v) = Type v
-mk_type (Cell (Sym v) Nil) = (Cell (Type v) Nil)
-mk_type (Cell a b) = (Cell (mk_type a) (mk_type b))
-mk_type Nil = Nil        
-
 instance Eq LispVal where
     (Str a) == (Str b) = a == b
     (Num a) == (Num b) = a == b
@@ -67,6 +63,7 @@ instance Show LispVal where
     show (Str s) = show s
     show (Sym s) = s
     show (Type t) = "::" ++ t
+    show (Err t v) = concat ["<ERROR: ", t, " ", show v, ">"] 
     show (Num n) = show n
     show cell@(Cell _ _) = concat $ "(" : (recur cell)
         where recur (Cell car Nil) = [show car, ")"]
@@ -87,28 +84,35 @@ lisp_prim args fn = Primitive (\env -> fn env $ map (Model.lookup env) args) $ a
           argl (a:rest) = Cell (Sym a) $ argl rest
 
 type Tbl = Map String LispVal
-type Environment = [(Tbl, Tbl)]
+type Frame = (Tbl, Tbl)
+type Environment = [Frame]
 
-lookup :: Environment -> String -> LispVal
-lookup [] _ = Nil
-lookup ((env, _):rest) k = case Data.Map.lookup k env of
-                             Nothing -> Model.lookup rest k
-                             Just v -> v
+extend :: Environment -> Environment
+extend env = (empty, empty):env
 
 bind :: Environment -> String -> LispVal -> Environment
 bind [] _ _ = []
 bind ((env, err):rest) k v = ((insert k v env), err) : rest
 
-extend :: Environment -> Environment
-extend env = (empty, empty):env
+bind_handler :: Environment -> String -> LispVal -> Environment
+bind_handler [] _ _ = []
+bind_handler ((env, err):rest) k v = (env, (insert k v err)) : rest
 
-arglist_env :: Environment -> LispVal -> LispVal -> Environment
-arglist_env env Nil Nil = env
-arglist_env _ ks Nil = error $ "Too few arguments: still expecting " ++ show ks
-arglist_env _ Nil vs = error $ "Too many arguments: " ++ show vs
-arglist_env env (Cell (Sym k) ks) (Cell v vs) = arglist_env (bind env k v) ks vs
-arglist_env env ks vs = error . unlines $ ["Something odd happened", show ks, show vs, show env]
+envLookup :: (Frame -> Tbl) -> Environment -> String -> LispVal
+envLookup _ [] _ = Nil
+envLookup fn (frame:rest) k  = case Data.Map.lookup k $ fn frame of
+                                 Nothing -> envLookup fn rest k
+                                 Just v -> v
 
+lookup :: Environment -> String -> LispVal
+lookup = envLookup fst
+
+lookup_handler :: Environment -> String -> LispVal
+lookup_handler env t = case envLookup snd env t of
+                         Nil -> envLookup snd env "*"
+                         v -> v
+
+---------- Basic, non-erroring primitives
 true_p :: LispVal -> Bool
 true_p (Bool False) = False
 true_p _ = True
@@ -119,14 +123,12 @@ self_evaluating_p Nil = True
 self_evaluating_p (Str _) = True
 self_evaluating_p (Num _) = True
 self_evaluating_p (Chr _) = True
+self_evaluating_p (Err _ _) = True
 self_evaluating_p _ = False
 
-fromList :: [(String, LispVal)] -> Environment
-fromList lst = [(Data.Map.fromList lst, empty)]
+fromList :: [(String, LispVal)] -> [(String, LispVal)] -> Environment
+fromList frame err = [(Data.Map.fromList frame, Data.Map.fromList err)]
 
 lisp_length :: Num a => LispVal -> a
 lisp_length (Cell _ rest) = 1 + (lisp_length rest)
 lisp_length _ = 0
-
-lisp_error :: String -> LispVal -> LispVal
-lisp_error errType val = Cell (Sym "error") (Cell (Sym errType) val)

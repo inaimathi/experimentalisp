@@ -3,7 +3,6 @@ module Main where
 import Model
 import Reader
 import Evaluator
-import Core
 
 import Pipes
 import Control.Monad (unless)
