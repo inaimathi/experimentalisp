@@ -26,6 +26,7 @@
 
 ## Various Notes
 
+- We probably want primitive fexprs (that would let us add some additional stuff from inside the language)
 - An alternative to `&rest` arguments is just making `list` a special form. Trying it out.
 - We need some kind of port abstraction. In three flavours: `in`, `out` and `in/out`. That'll let us deal with a whole bunch of stuff inside the language, including files, sockets, and standard in/out.
 - We should probably separate `fexpr`s into two stages; the expansion and the evaluation of the expansion. If done properly, we can then provide `expand` in the guest language for a pretty cheap macroexpander.
@@ -40,6 +41,25 @@
 	- Think about procedure types. Specifically, think about cons/car/cdr (you clearly need type variables here, and you need to understand the concept of container types as it applies)
 	- Sane interface seems to be `type`/`type-of`/`type-check`
 
+Example:
+
+    (type (cons number number))
+    > (number . number)
+    (type-of (cons 3 4))
+    > (number . number)
+    (type-check (cons 3 4) (type (cons number number)))
+    > true
+    (type-check (cons 3 4) (type (-> number number number)))
+    > false
+    (type-check + (type (-> number number number))) ;; this stops being sensible as soon as you add methods for everything. Maybe? Maybe it works, actually. It should just check whether this is a valid combination, rather than THE ONLY valid combination.
+    > true
+	(type-of +)
+	> (-> number number number)
+	(type-of (list 1 2 3 4 5 6 7 8))
+	> (number)
+	(type-of "test")
+	> string ;; maybe `(char)`?
+
 - Typeclasses:
 	- Each typeclass is an environment mapping to the different types that implement it to the implementation of the specific methods entailed by that typeclass
 	- Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass.
@@ -49,6 +69,17 @@
 - Errors:
 	- An environment is a set of symbol bindings AND a set of handler bindings. If an error happens, we match in the handler bindings (the default, top-level environment should have a default handler that drops the user into a prompt)
 	- Errors should probably get their own type in the LispVal declaration (as well as their own type in the type system)
+
+Example:
+
+    (error test-error 5)
+    > <ERROR: test-error 5>
+    (raise (error test-error 5))
+    > ;; top-level handler effect
+    (handle test-error (fn (err) 'caught-error))
+    > NIL
+    (raise (error test-error 5))
+    > caught-error
 
 - Modules:
 	- Seemslike they could basically _be_ environments (except for the parameterizing thing, for which they'd have to be functions which return environments).
@@ -61,6 +92,21 @@
 	- The environment approach may be a bit _too_ porous. What kind of use cases do you really have for this stuff? Lets start with the obvious ones:
 		- If you have a piece of code from some untrsted external source, you want to be able to say something like "Run this in an environment where the IO procedures are switched out with nerfed ones".
 		- If you have a piece of code that implements something with the data structure `foo`, you want to be able to say "Run this, but replace `foo` with the equivalently-interacting `bar` (for example, maybe switch out the particular tree-representation in a `Set` implementation)
+
+Example:
+
+    (module () add (fn (a b) (+ a b)) sub (fn (a b) (- a b)) div (fn (a b) (/ a b)) mul (fn (a b) (* a b)))
+    > <module ()>
+    (def math (module () add (fn (a b) (+ a b)) sub (fn (a b) (- a b)) div (fn (a b) (/ a b)) mul (fn (a b) (* a b))))
+    > math
+    NIL
+    > <fn (a b)>
+    ((math add) 3 4)
+    > 7
+    (def plus (math add))
+    > NIL
+    (plus 3 4)
+    > 7
 
 ## How to use it
 
