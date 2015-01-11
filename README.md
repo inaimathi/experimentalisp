@@ -261,6 +261,12 @@ Example:
 	(trie avl-tree)
 	> <module>
 
+###### Counterpoint: [Fuck Modules](http://erlang.org/pipermail/erlang-questions/2011-May/058768.html)
+
+- Forget modules entirely. Allow functions of different arity and type signature, but with the same name to exist, keep track of dependencies on a per-function level.
+- Does this buy you anything composition-wise? I could see `start` and `end` functions getting weird, so you still probably want some kind of namespacing.
+- Installation/deployment might get a bit easier. Custom compilation might get a bit easier. Give it some though.
+
 ###### Outher examples
 
     ;;; hello-world.exp
