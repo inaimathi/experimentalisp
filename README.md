@@ -132,22 +132,22 @@ Example:
 
 Example:
 
-    (type (cons number number))
-    > (number . number)
+    (type (cons Number Number))
+    > (Number . Number)
     (type-of (cons 3 4))
-    > (number . number)
-    (type-check (cons 3 4) (type (cons number number)))
+    > (Number . Number)
+    (type-check (cons 3 4) (type (cons Number Number)))
     > true
-    (type-check (cons 3 4) (type (-> number number number)))
+    (type-check (cons 3 4) (type (-> Number Number Number)))
     > false
-    (type-check + (type (-> number number number))) ;; this stops being sensible as soon as you add methods for everything. Maybe? Maybe it works, actually. It should just check whether this is a valid combination, rather than THE ONLY valid combination.
+    (type-check + (type (-> Number Number Number)))
     > true
 	(type-of +)
-	> (-> number number number)
+	> ((-> Number Number Number))
 	(type-of (list 1 2 3 4 5 6 7 8))
-	> (number)
+	> (Number)
 	(type-of "test")
-	> string ;; maybe `(char)`?
+	> String ;; maybe `(Char)`?
 
 ###### Typeclasses:
 
@@ -155,6 +155,7 @@ Example:
 - Assuming first-class environments, this'd be fairly simple to implement. We would also need a map of methods to their source typeclass.
 - It looks like the generic function approach might be easier to implement, and it would have one fewer lookup level (each function would directly dispatch on arguments, rather than pointing to a typeclass entry)
 	- Side-note: it looks like some of the problems that typeclass implementations are running into will be solved, approximately, by moving closer to the generic-function approach
+- If we ditch partials and go the multiple arity route, it suddenly starts looking sensible to just allow the same name for functions of different type and arity. That implicitly gives you more flexible generic functions, as long as you can do the more complicated dispatch. That dispatch seems like it'll get difficult. Especially for overlapping functions. How do you sort them? How do you even find all of the relevant ones from a particular environment perspective? It sounds like the sanest approach is to throw your hands up and say "screw it, we're going from `the-env` to the global environment and picking the first matching one on the way". Argleblargh! I need to think harder about this.
 
 ###### Errors:
 
@@ -268,7 +269,7 @@ Example:
 - Installation/deployment might get a bit easier. Custom compilation might get a bit easier. Give it some though.
 - Still need namespaces, probably qualified by username or something, but no parameterization (we're doing module delimitation on a function level)
 
-Pie in the sky example:
+Pie in the sky example (because, as you'll see, this is hard):
 
     > (fold + (list 2 3 4 5 6 7 8 9 10))
 	;; checking for fold/2  :: (-> (-> Number Number Number) (Number) Number)
@@ -277,7 +278,7 @@ Pie in the sky example:
 	54
 	> (fold + '(a b c))
 	;; checking for +/2 :: (-> Symbol a b)
-	;; found one candidate: dxnn/sicp/symbolic/+ :: (-> a b a)
+	;; found one candidate: dxnn.sicp.symbolic.+/2 :: (-> a b a)
 	;; installing...
 	((a + b) + c)
 	> (start 4343)
@@ -288,7 +289,7 @@ Pie in the sky example:
 	;; Please select 1 or 2
 	1
 	;; found 48 dependencies for inaimathi.house.start/1
-	;; installing... ... ... ... ...
+	;; installing...................................................
 	Listening on 4343...
 	C-c C-c
 	>
