@@ -124,6 +124,9 @@ self_evaluating_p (Str _) = True
 self_evaluating_p (Num _) = True
 self_evaluating_p (Chr _) = True
 self_evaluating_p (Err _ _) = True
+self_evaluating_p (Primitive _ _) = True
+self_evaluating_p (Procedure _ _ _) = True
+self_evaluating_p (Fexpr _ _ _) = True
 self_evaluating_p _ = False
 
 fromList :: [(String, LispVal)] -> [(String, LispVal)] -> Environment

@@ -34,6 +34,8 @@ eval (Sym exp) env =
     Res $ Model.lookup env exp
 eval (Cell (Sym "error") (Cell (Sym errT) (Cell val Nil))) env =
     Res $ Err errT val
+eval (Cell (Sym "raise") (Cell err@(Err t _) Nil)) env =
+    Res $ (Cell (lookup_handler env t) (Cell err Nil))
 eval (Cell (Sym "handler") (Cell (Sym errT) (Cell handler Nil))) env =
     Mod Nil $ bind_handler env errT handler
 eval (Cell (Sym "list") rest) env =
@@ -137,8 +139,6 @@ global_env = fromList
              , ("cdr", lisp_prim ["a"] (\_ [Cell _ cdr] -> cdr))
              , ("cons", lisp_prim ["a", "b"] (\_ [a, b] -> Cell a b))
 
-
-             , ("raise", lisp_prim ["err"] (\env [Err t v] -> lookup_handler env t))
 
              , ("the-env", lisp_prim [] (\env _ -> lisp_env env))
              , ("read", lisp_prim ["exp"] (\_ [Str exp] -> case lisp_read exp of
