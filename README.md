@@ -266,6 +266,32 @@ Example:
 - Forget modules entirely. Allow functions of different arity and type signature, but with the same name to exist, keep track of dependencies on a per-function level.
 - Does this buy you anything composition-wise? I could see `start` and `end` functions getting weird, so you still probably want some kind of namespacing.
 - Installation/deployment might get a bit easier. Custom compilation might get a bit easier. Give it some though.
+- Still need namespaces, probably qualified by username or something, but no parameterization (we're doing module delimitation on a function level)
+
+Pie in the sky example:
+
+    > (fold + (list 2 3 4 5 6 7 8 9 10))
+	;; checking for fold/2  :: (-> (-> Number Number Number) (Number) Number)
+	;; found one candidate: inaimathi.core.fold/2 :: (-> (-> a b a) (a) b)
+	;; installing...
+	54
+	> (fold + '(a b c))
+	;; checking for +/2 :: (-> Symbol a b)
+	;; found one candidate: dxnn/sicp/symbolic/+ :: (-> a b a)
+	;; installing...
+	((a + b) + c)
+	> (start 4343)
+	;; checking for start/1 :: (-> Number a)
+	;; found two candidates
+	;;   1. inaimathi.house.start/1 :: (-> Number NIL)
+	;;   2. inaimathi.ports.hunchentoot.start/1 :: (-> Number NIL)
+	;; Please select 1 or 2
+	1
+	;; found 48 dependencies for inaimathi.house.start/1
+	;; installing... ... ... ... ...
+	Listening on 4343...
+	C-c C-c
+	>
 
 ###### Outher examples
 
