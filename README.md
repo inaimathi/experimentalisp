@@ -293,7 +293,7 @@ Pie in the sky example:
 	C-c C-c
 	>
 
-###### Outher examples
+###### Other examples
 
     ;;; hello-world.exp
     (def main () (print "Hello world!))
