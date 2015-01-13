@@ -1,31 +1,12 @@
 #lang racket/base
 (provide primitive primitive?
 	 procedure procedure?
-	 fexpr fexpr? fexpr-partial?
-	 make-partial partial? complete? collapse
+	 fexpr fexpr?
 	 arglist-of environment-of body-of
 
-	 global-env extend-env lookup bind! re-bind!
+	 global-env extend-env lookup bind! re-bind! arglist-env!
 
 	 true? self-evaluating?)
-
-;;;;;;;;;; Partial application
-(define (make-partial thing new-args)
-  (letrec ((argl (arglist-of thing))
-	   (rec (lambda (ks vs)
-		  (cond ((and (null? ks) (null? vs)) '())
-			((null? vs) ks)
-			((null? ks) (error "Too many arguments"))
-			(else (rec (cdr ks) (cdr vs)))))))
-    (if (partial? thing)
-	(partial (rec argl new-args) (append (partial-values thing) new-args) (body-of thing))
-	(partial (rec argl new-args) new-args thing))))
-
-(define (collapse a-partial)
-  (arglist-env!
-   (extend-env (environment-of a-partial))
-   (arglist-of (body-of a-partial))
-   (partial-values a-partial)))
 
 (define (arglist-env! env arglist args)
   (if (and (null? arglist) (null? args))
@@ -39,29 +20,20 @@
 (struct procedure (env args body))
 (struct fexpr (env args body))
 
-(struct partial (remaining-args values body))
-(define (complete? thing)
-  (eq? '() (partial-remaining-args thing)))
-(define (fexpr-partial? thing)
-  (and (partial? thing) (fexpr? (partial-body thing))))
-
 (define (environment-of thing)
   (cond ((primitive? thing) global-env)
 	((procedure? thing) (procedure-env thing))
-	((fexpr? thing) (fexpr-env thing))
-	((partial? thing) (environment-of (body-of thing)))))
+	((fexpr? thing) (fexpr-env thing))))
 
 (define (arglist-of thing)
   (cond ((primitive? thing) (primitive-args thing))
 	((procedure? thing) (procedure-args thing))
-	((fexpr? thing) (fexpr-args thing))
-	((partial? thing) (partial-remaining-args thing))))
+	((fexpr? thing) (fexpr-args thing))))
 
 (define (body-of thing)
   (cond ((primitive? thing) (primitive-body thing))
 	((procedure? thing) (procedure-body thing))
-	((fexpr? thing) (fexpr-body thing))
-	((partial? thing) (partial-body thing))))
+	((fexpr? thing) (fexpr-body thing))))
 
 ;;;;;;;;;; Environments
 (define (extend-env env) (cons (make-hash) env))
@@ -129,5 +101,4 @@
       (char? thing)
       (primitive? thing)
       (procedure? thing)
-      (fexpr? thing)
-      (partial? thing)))
+      (fexpr? thing)))

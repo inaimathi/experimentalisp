@@ -59,20 +59,17 @@
 
 (define (exp-apply op args env)
   (let* ((fn (exp-eval op env))
-	 (final-args
-	  (if (or (fexpr? fn) (fexpr-partial? fn))
-	      args
-	      (eval-args args env)))
-	 (p (make-partial fn final-args)))
-    (if (complete? p)
-	(let ((f (body-of p))
-	      (new-env (collapse p)))
-	  (cond ((primitive? f)
-		 ((body-of f) new-env))
-		((procedure? f)
-		 (eval-sequence (body-of f) new-env))
-		((fexpr? f)
-		 (exp-eval 
-		  (eval-sequence (body-of f) new-env)
-		  env))))
-	p)))
+	 (final-args (if (fexpr? fn) args (eval-args args env)))
+	 (body (body-of fn))
+	 (new-env (arglist-env!
+		   (extend-env (environment-of fn))
+		   (arglist-of fn)
+		   final-args)))
+    (cond ((primitive? fn)
+	   (body new-env))
+	  ((procedure? fn)
+	   (eval-sequence body new-env))
+	  ((fexpr? fn)
+	   (exp-eval 
+	    (eval-sequence body new-env)
+	    env)))))
