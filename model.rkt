@@ -35,6 +35,11 @@
 	((procedure? thing) (procedure-body thing))
 	((fexpr? thing) (fexpr-body thing))))
 
+;;;;;;;;;; Ports
+(struct port (host-port direction label))
+(define (get-char! a-port) (read-char a-port))
+(define (put-char! a-port char) (write-char char a-port))
+
 ;;;;;;;;;; Environments
 (define (extend-env env) (cons (make-hash) env))
 
@@ -81,10 +86,19 @@
     (prim! env / (a b) (/ a b))
     (prim! env * (a b) (* a b))
     (prim! env = (a b) (if (eq? a b) 'true 'false))
+
     (prim! env car (a) (car a))
     (prim! env cdr (a) (cdr a))
     (prim! env cons (a b) (cons a b))
+
     (prim! env print (thing) (begin (displayln thing) '()))
+
+    (prim! env open-in-file! (fname) (port (open-input-file fname) 'in (cons 'file fname)))
+    (prim! env open-out-file! (fname) (port (open-output-file fname) 'out (cons 'file fname)))
+    ;; (prim! env connect (hostname port) (tcp-connect hostname port))
+
+    (prim! env get-char! (a-port) (read-char (port-host-port a-port)))
+    (prim! env put-char! (a-port c) (write-char c (host-port a-port)))
     env))
 
 ;;;;;;;;;; Basics
@@ -99,6 +113,8 @@
       (string? thing)
       (number? thing)
       (char? thing)
+      (port? thing)
+      
       (primitive? thing)
       (procedure? thing)
       (fexpr? thing)))
