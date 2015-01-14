@@ -36,9 +36,8 @@
 	((fexpr? thing) (fexpr-body thing))))
 
 ;;;;;;;;;; Ports
-(struct port (host-port direction label))
-(define (get-char! a-port) (read-char a-port))
-(define (put-char! a-port char) (write-char char a-port))
+(struct in-port (pt label))
+(struct out-port (pt label))
 
 ;;;;;;;;;; Environments
 (define (extend-env env) (cons (make-hash) env))
@@ -93,12 +92,13 @@
 
     (prim! env print (thing) (begin (displayln thing) '()))
 
-    (prim! env open-in-file! (fname) (port (open-input-file fname) 'in (cons 'file fname)))
-    (prim! env open-out-file! (fname) (port (open-output-file fname) 'out (cons 'file fname)))
+    (prim! env open-in-file! (fname) (in-port (open-input-file fname) (cons 'file fname)))
+    (prim! env open-out-file! (fname) (out-port (open-output-file fname #:exists 'append) (cons 'file fname)))
     ;; (prim! env connect (hostname port) (tcp-connect hostname port))
 
-    (prim! env get-char! (a-port) (read-char (port-host-port a-port)))
-    (prim! env put-char! (a-port c) (write-char c (host-port a-port)))
+    (prim! env get-char! (a-port) (read-char (in-port-pt a-port)))
+    (prim! env put-char! (a-port c) (write-char c (out-port-pt a-port)))
+    (prim! env flush! (a-port) (flush-output (out-port-pt a-port)))
     env))
 
 ;;;;;;;;;; Basics

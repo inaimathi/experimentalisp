@@ -272,7 +272,7 @@ Example:
 Pie in the sky example (because, as you'll see, this is hard):
 
     > (fold + (list 2 3 4 5 6 7 8 9 10))
-	;; checking for fold/2  :: (-> (-> Number Number Number) (Number) Number)
+	;; checking for fold/2  :: (-> (-> Number Number Number) (Number) a)
 	;; found one candidate: inaimathi.core.fold/2 :: (-> (-> a b a) (a) b)
 	;; installing...
 	54
