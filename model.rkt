@@ -1,4 +1,5 @@
 #lang racket/base
+(require racket/tcp)
 (provide primitive primitive?
 	 procedure procedure?
 	 fexpr fexpr?
@@ -76,10 +77,6 @@
 
 (define global-env 
   (let ((env (list (make-hash))))
-    (bind! 
-     env 'the-env
-     (primitive '() (lambda (env) env)))
-    
     (prim! env + (a b) (+ a b))
     (prim! env - (a b) (- a b))
     (prim! env / (a b) (/ a b))
@@ -95,6 +92,17 @@
     (prim! env open-in-file! (fname) (in-port (open-input-file fname) (cons 'file fname)))
     (prim! env open-out-file! (fname) (out-port (open-output-file fname #:exists 'append) (cons 'file fname)))
     ;; (prim! env connect (hostname port) (tcp-connect hostname port))
+    
+    (prim! env listen! (port) (in-port (tcp-listen port) (cons 'tcp-server port)))
+    (prim! env accept! (port) 
+	   (let ((lbl (cons 'tcp-socket (in-port-label))))
+	     (let-values (((in out) (tcp-accept (in-port-pt port))))
+	       (cons (in-port in lbl) (out-port out lbl)))))
+
+    (prim! env connect! (hostname port)
+	   (let ((lbl (list 'tcp-socket hostname port)))
+	     (let-values (((in out) (tcp-connect hostname port)))
+	       (cons (in-port in lbl) (out-port out lbl)))))
 
     (prim! env get-char! (a-port) (read-char (in-port-pt a-port)))
     (prim! env put-char! (a-port c) (write-char c (out-port-pt a-port)))

@@ -122,7 +122,13 @@ Example:
 	(read-char! f)
 	> <ERROR: read-from-closed-port (f . <port IN file:test.txt>)>
 	
-	
+
+###### Basic Datastructures:
+
+- Linked lists and vectors seem like the two basics you need. If you have those, you can build Begwell-style compounds out of them, but not the other way around.
+- Going against mutation seems like a losing battle if you want a living system. There are like a hundred different little ways environments and basic forms depend on mutation under the hood in completely non-obvious ways. The SML approach is beginning to look more and more sound (that is, the approach of not segregating IO functions from others), even discounting the exception stuff
+- Do we still want single-assignment? That, at least, looks like something we can work with...
+- We still need namespaces. Pretty much entirely for human readers; we need to be able to group a bunch of functions by subject (or something equally nebulous), but refer to them individually. As mentioned, these namespaces can probably be implemented as environment frames.
 	
 
 ###### Types:
