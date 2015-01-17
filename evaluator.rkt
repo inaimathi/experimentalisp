@@ -1,6 +1,7 @@
 #lang racket/base
 (require racket/tcp)
-(provide exp-eval exp-apply global-env)
+(provide exp-eval exp-apply global-env
+	 fexpr-expand)
 
 (require "model.rkt")
 
@@ -87,12 +88,16 @@
 (define global-env 
   (let ((env (list (make-hash))))
     (prim! env f-expand (form) (if (pair? form) (fexpr-expand (car form) (cdr form) env) form))
+    (prim! env eval (form) (exp-eval form env))
+    (prim! env apply (op args) (exp-apply op args env))
+    
     (prim! env + (a b) (+ a b))
     (prim! env - (a b) (- a b))
     (prim! env / (a b) (/ a b))
     (prim! env * (a b) (* a b))
-    (prim! env = (a b) (if (eq? a b) 'true 'false))
+    (prim! env = (a b) (if (equal? a b) 'true 'false))
 
+    (prim! env pair? (a) (if (pair? a) 'true 'false))
     (prim! env car (a) (car a))
     (prim! env cdr (a) (cdr a))
     (prim! env cons (a b) (cons a b))

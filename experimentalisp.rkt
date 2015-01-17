@@ -5,8 +5,11 @@
 
 (define (loop)
   (display "EXP>> ")
-  (print (exp-eval (read) global-env))
-  (displayln "") (displayln "")
+  (let ((expression (read)))
+    (display "   >> ")
+    (displayln expression)
+    (print (exp-eval expression global-env))
+    (displayln "")) (displayln "")
   (loop))
 
 (define (main)

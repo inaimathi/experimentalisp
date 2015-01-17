@@ -1,6 +1,9 @@
 (def nil ())
 (def null? (fn (thing) (= () thing)))
-(def not null?)
+
+(def and (fn (a b) (if a (if b true false) false)))
+(def not (fn (thing) (if thing 'false 'true)))
+(def atom? (fn (thing) (not (pair? thing))))
 
 (def map 
   (fn (f lst)
@@ -33,3 +36,37 @@
                              (cons (cons 'def bind) memo))
                            (list body)
                            (reverse bindings)))))))
+
+(def cond
+  (fexpr (test/res-pairs)
+         (fold (fn (memo clause) 
+                 (list 'if (car clause) (cons 'do (cdr clause)) memo))
+               nil (reverse test/res-pairs))))
+
+(def quasiquote
+  (let ((process-qq 
+         (fn (term) 
+           (cond (((atom? term) 
+                   (list 'quote term))
+                  ((= (car term) 'quasiquote)
+                   (process-qq (car (cdr term))))
+                  ((= (car term) 'unquote)
+                   (car (cdr term)))
+                  (true
+                   (cons 'list (process-qs term nil)))))))
+        (cons-on 
+         (fn (lst-a lst-b)
+           (if (null? lst-a) 
+             lst-b
+             (cons-on (cdr lst-a) (cons (car lst-a) lst-b)))))
+        (process-qs
+         (fn (terms acc)
+           (cond (((null? terms)
+                   (reverse acc))
+                  ((atom? (car terms))
+                   (process-qs (cdr terms) (cons (process-qq (car terms)) acc)))
+                  ((= (car (car terms)) 'unquote-splicing)
+                   (process-qs (cdr terms) (cons-on (eval (car (cdr (car terms)))) acc)))
+                  (true
+                   (process-qs (cdr terms) (cons (process-qq (car terms)) acc))))))))
+    (fexpr (term) (process-qq term))))

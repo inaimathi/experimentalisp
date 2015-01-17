@@ -87,7 +87,8 @@
       #t))
 
 (define (self-evaluating? thing)
-  (or (boolean? thing)
+  (or (eq? 'false thing)
+      (eq? 'true thing)
       (null? thing)
       (string? thing)
       (number? thing)
