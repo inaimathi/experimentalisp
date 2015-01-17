@@ -1,11 +1,14 @@
 #lang racket/base
 (require racket/tcp)
-(provide primitive primitive?
+(provide prim! primitive primitive?
 	 procedure procedure?
 	 fexpr fexpr?
 	 arglist-of environment-of body-of
 
-	 global-env extend-env lookup bind! re-bind! arglist-env!
+	 in-port in-port-pt in-port-label in-port?
+	 out-port out-port-pt out-port-label out-port?
+
+	 extend-env lookup bind! re-bind! arglist-env!
 
 	 true? self-evaluating?)
 
@@ -17,12 +20,12 @@
        (cdr arglist) (cdr args))))
 
 ;;;;;;;;;; Callable forms
-(struct primitive (args body))
+(struct primitive (env args body))
 (struct procedure (env args body))
 (struct fexpr (env args body))
 
 (define (environment-of thing)
-  (cond ((primitive? thing) global-env)
+  (cond ((primitive? thing) (primitive-env thing))
 	((procedure? thing) (procedure-env thing))
 	((fexpr? thing) (fexpr-env thing))))
 
@@ -70,44 +73,12 @@
     [(prim env name (a ...) body)
      (bind! env 'name
 	    (primitive 
-	     '(a ...) (lambda (env)
-			(let ((a (cdr (lookup env 'a)))
-			      ...)
-			  body))))]))
-
-(define global-env 
-  (let ((env (list (make-hash))))
-    (prim! env + (a b) (+ a b))
-    (prim! env - (a b) (- a b))
-    (prim! env / (a b) (/ a b))
-    (prim! env * (a b) (* a b))
-    (prim! env = (a b) (if (eq? a b) 'true 'false))
-
-    (prim! env car (a) (car a))
-    (prim! env cdr (a) (cdr a))
-    (prim! env cons (a b) (cons a b))
-
-    (prim! env print (thing) (begin (displayln thing) '()))
-
-    (prim! env open-in-file! (fname) (in-port (open-input-file fname) (cons 'file fname)))
-    (prim! env open-out-file! (fname) (out-port (open-output-file fname #:exists 'append) (cons 'file fname)))
-    ;; (prim! env connect (hostname port) (tcp-connect hostname port))
-    
-    (prim! env listen! (port) (in-port (tcp-listen port) (cons 'tcp-server port)))
-    (prim! env accept! (port) 
-	   (let ((lbl (cons 'tcp-socket (in-port-label))))
-	     (let-values (((in out) (tcp-accept (in-port-pt port))))
-	       (cons (in-port in lbl) (out-port out lbl)))))
-
-    (prim! env connect! (hostname port)
-	   (let ((lbl (list 'tcp-socket hostname port)))
-	     (let-values (((in out) (tcp-connect hostname port)))
-	       (cons (in-port in lbl) (out-port out lbl)))))
-
-    (prim! env get-char! (a-port) (read-char (in-port-pt a-port)))
-    (prim! env put-char! (a-port c) (write-char c (out-port-pt a-port)))
-    (prim! env flush! (a-port) (flush-output (out-port-pt a-port)))
-    env))
+	     env
+	     '(a ...) 
+	     (lambda (env)
+	       (let ((a (cdr (lookup env 'a)))
+		     ...)
+		 body))))]))
 
 ;;;;;;;;;; Basics
 (define (true? thing)

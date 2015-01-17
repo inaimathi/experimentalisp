@@ -1,5 +1,6 @@
 #lang racket/base
-(provide exp-eval exp-apply)
+(require racket/tcp)
+(provide exp-eval exp-apply global-env)
 
 (require "model.rkt")
 
@@ -59,19 +60,61 @@
       (error (format "EVAL-ASSIGNMENT: tried assigning to non-symbol '~a'" name)))
   exp)
 
+(define (fexpr-expand op args env)
+  (let ((fn (exp-eval op env)))
+    (if (fexpr? fn)
+	(eval-sequence 
+	 (body-of fn) 
+	 (arglist-env! 
+	  (extend-env (environment-of fn))
+	  (arglist-of fn)
+	  args))
+	(cons op args))))
+
 (define (exp-apply op args env)
-  (let* ((fn (exp-eval op env))
-	 (final-args (if (fexpr? fn) args (eval-args args env)))
-	 (body (body-of fn))
-	 (new-env (arglist-env!
-		   (extend-env (environment-of fn))
-		   (arglist-of fn)
-		   final-args)))
-    (cond ((primitive? fn)
-	   (body new-env))
-	  ((procedure? fn)
-	   (eval-sequence body new-env))
-	  ((fexpr? fn)
-	   (exp-eval 
-	    (eval-sequence body new-env)
-	    env)))))
+  (let ((fn (exp-eval op env)))
+    (if (fexpr? fn)
+	(exp-eval (fexpr-expand op args env) env)
+	(let ((new-env (arglist-env!
+			(extend-env (environment-of fn))
+			(arglist-of fn)
+			(eval-args args env))))
+	  (cond ((primitive? fn)
+		 ((body-of fn) new-env))
+		((procedure? fn)
+		 (eval-sequence (body-of fn) new-env)))))))
+
+(define global-env 
+  (let ((env (list (make-hash))))
+    (prim! env f-expand (form) (if (pair? form) (fexpr-expand (car form) (cdr form) env) form))
+    (prim! env + (a b) (+ a b))
+    (prim! env - (a b) (- a b))
+    (prim! env / (a b) (/ a b))
+    (prim! env * (a b) (* a b))
+    (prim! env = (a b) (if (eq? a b) 'true 'false))
+
+    (prim! env car (a) (car a))
+    (prim! env cdr (a) (cdr a))
+    (prim! env cons (a b) (cons a b))
+
+    (prim! env print (thing) (begin (displayln thing) '()))
+
+    (prim! env open-in-file! (fname) (in-port (open-input-file fname) (cons 'file fname)))
+    (prim! env open-out-file! (fname) (out-port (open-output-file fname #:exists 'append) (cons 'file fname)))
+    ;; (prim! env connect (hostname port) (tcp-connect hostname port))
+    
+    (prim! env listen! (port) (in-port (tcp-listen port) (cons 'tcp-server port)))
+    (prim! env accept! (port) 
+	   (let ((lbl (cons 'tcp-socket (in-port-label))))
+	     (let-values (((in out) (tcp-accept (in-port-pt port))))
+	       (cons (in-port in lbl) (out-port out lbl)))))
+
+    (prim! env connect! (hostname port)
+	   (let ((lbl (list 'tcp-socket hostname port)))
+	     (let-values (((in out) (tcp-connect hostname port)))
+	       (cons (in-port in lbl) (out-port out lbl)))))
+
+    (prim! env get-char! (a-port) (read-char (in-port-pt a-port)))
+    (prim! env put-char! (a-port c) (write-char c (out-port-pt a-port)))
+    (prim! env flush! (a-port) (flush-output (out-port-pt a-port)))
+    env))
