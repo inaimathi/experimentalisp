@@ -70,3 +70,10 @@
                   (true
                    (process-qs (cdr terms) (cons (process-qq (car terms)) acc))))))))
     (fexpr (term) (process-qq term))))
+
+(def defx
+  (fexpr (name args body)
+         `(def ,name (fexpr ,args ,body))))
+
+(defx defn (name args body)
+  `(def ,name (fn ,args ,body)))
