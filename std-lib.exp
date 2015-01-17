@@ -1,0 +1,35 @@
+(def nil ())
+(def null? (fn (thing) (= () thing)))
+(def not null?)
+
+(def map 
+  (fn (f lst)
+    (if (null? lst)
+      nil
+      (cons (f (car lst))
+            (map f (cdr lst))))))
+
+(def fold
+  (fn (f memo lst)
+    (if (null? lst)
+      memo
+      (fold f (f memo (car lst)) (cdr lst)))))
+
+(def reverse 
+  (fn (lst) 
+    (fold (fn (a b) (cons b a)) nil lst)))
+
+(def append
+  (fn (lst-a lst-b)
+    (fold (fn (memo elem) (cons elem memo))
+          lst-b (reverse lst-a))))
+
+(def let
+  (fexpr (bindings body)
+         (list 
+          (cons 
+           'fn (cons () 
+                     (fold (fn (memo bind)
+                             (cons (cons 'def bind) memo))
+                           (list body)
+                           (reverse bindings)))))))
